@@ -65,8 +65,12 @@ var filterUrl, _ = http.ParseURL("http://stream.twitter.com/1/statuses/filter.js
 type Client struct {
     Username string
     Password string
+    Stream   chan Tweet
     conn     *http.ClientConn
-    tweets   chan Tweet
+}
+
+func NewClient(username, password string) *Client {
+	return &Client { username, password, make(chan Tweet), nil }
 }
 
 func encodedAuth(user, pwd string) string {
@@ -100,15 +104,15 @@ func (c *Client) readStream(resp *http.Response) {
         var tweet Tweet
         json.Unmarshal(line, &tweet)
 
-        c.tweets <- tweet
+        c.Stream <- tweet
     }
 }
 
 // Follow a list of user ids
-func (c *Client) Follow(ids []int64) (chan Tweet, os.Error) {
+func (c *Client) Follow(ids []int64) os.Error {
     conn, err := net.Dial("tcp", "", filterUrl.Host+":80")
     if err != nil {
-        return nil, err
+        return err
     }
     c.conn = http.NewClientConn(conn, nil)
 
@@ -135,19 +139,15 @@ func (c *Client) Follow(ids []int64) (chan Tweet, os.Error) {
     }
     err = c.conn.Write(&req)
     if err != nil {
-        return nil, err
+        return err
     }
 
     resp, err := c.conn.Read()
     if err != nil {
-        return nil, err
-    }
-
-    if c.tweets == nil {
-        c.tweets = make(chan Tweet)
+        return err
     }
 
     go c.readStream(resp)
 
-    return c.tweets, nil
+    return nil
 }
