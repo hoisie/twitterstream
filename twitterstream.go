@@ -4,6 +4,7 @@ import (
     "bufio"
     "bytes"
     "encoding/base64"
+    "fmt"
     "http"
     "io"
     "json"
@@ -11,66 +12,107 @@ import (
     "net"
     "strconv"
     "strings"
+    "sync"
 )
 
+var filterApi, _ = http.ParseURL("http://stream.twitter.com/1/statuses/filter.json")
 
-type User struct {
-    Lang                         string
-    Verified                     bool
-    Followers_count              int
-    Location                     string
-    Screen_name                  string
-    Following                    bool
-    Friends_count                int
-    Profile_background_color     string
-    Favourites_count             int
-    Description                  string
-    Notifications                string
-    Profile_text_color           string
-    Url                          string
-    Time_zone                    string
-    Statuses_count               int
-    Profile_link_color           string
-    Geo_enabled                  bool
-    Profile_background_image_url string
-    Protected                    bool
-    Contributors_enabled         bool
-    Profile_sidebar_fill_color   string
-    Name                         string
-    Profile_background_tile      string
-    Created_at                   string
-    Profile_image_url            string
-    Id                           int64
-    Utc_offset                   int
-    Profile_sidebar_border_color string
+type streamConn struct {
+    clientConn *http.ClientConn
+    stream     chan Tweet
+    authData   string
+    postData   string
+    stale      bool
 }
 
-type Tweet struct {
-    Text                    string
-    Truncated               bool
-    Geo                     string
-    In_reply_to_screen_name string
-    Favorited               bool
-    Source                  string
-    Contributors            string
-    In_reply_to_status_id   string
-    In_reply_to_user_id     int64
-    Id                      int64
-    Created_at              string
-    User                    User
+func (conn *streamConn) Close() {
+    println("closing the conn!")
+    conn.stale = true
+    tcpConn, _ := conn.clientConn.Close()
+    tcpConn.Close()
 }
 
-var filterUrl, _ = http.ParseURL("http://stream.twitter.com/1/statuses/filter.json")
+func (conn *streamConn) connect() (*http.Response, os.Error) {
+    tcpConn, err := net.Dial("tcp", "", filterApi.Host+":80")
+    if err != nil {
+        return nil, err
+    }
+    conn.clientConn = http.NewClientConn(tcpConn, nil)
 
-type Client struct {
+    var req http.Request
+    req.URL = filterApi
+    req.Method = "POST"
+    req.Body = nopCloser{bytes.NewBufferString(conn.postData)}
+    req.ContentLength = int64(len(conn.postData))
+    req.Header = map[string]string{
+        "Content-Type": "application/x-www-form-urlencoded",
+    }
+
+    if conn.authData != "" {
+        req.Header["Authorization"] = "Basic " + conn.authData
+    }
+
+    err = conn.clientConn.Write(&req)
+    if err != nil {
+        return nil, err
+    }
+
+    resp, err := conn.clientConn.Read()
+    if err != nil {
+        return nil, err
+    }
+
+    return resp, nil
+}
+
+func (conn *streamConn) readStream(resp *http.Response) {
+    reader := bufio.NewReader(resp.Body)
+    fmt.Println("Readstream started!")
+    for {
+        line, err := reader.ReadString('\n')
+        if err != nil {
+            println(err.String())
+            //we've been closed
+            if conn.stale {
+                return
+            }
+
+            //otherwise, reconnect
+            resp, err := conn.connect()
+            if err != nil {
+                println(err.String())
+            }
+
+            if resp.StatusCode != 200 {
+                println("HTTP Error" + resp.Status)
+            }
+
+            continue
+        }
+        line = strings.TrimSpace(line)
+
+        if len(line) == 0 {
+            continue
+        }
+
+        var tweet Tweet
+        json.Unmarshal(line, &tweet)
+
+        conn.stream <- tweet
+    }
+}
+
+
+type FilterStream struct {
     Username string
     Password string
     Stream   chan Tweet
-    conn     *http.ClientConn
+    conn     *streamConn
+    connLock *sync.Mutex
 }
 
-func NewClient(username, password string) *Client {
-	return &Client { username, password, make(chan Tweet), nil }
+func NewFilterStream(username, password string) *FilterStream {
+    return &FilterStream{username, password, make(chan Tweet), nil, new(sync.Mutex)}
 }
 
 func encodedAuth(user, pwd string) string {
@@ -87,39 +129,10 @@ type nopCloser struct {
 
 func (nopCloser) Close() os.Error { return nil }
 
-func (c *Client) readStream(resp *http.Response) {
-    reader := bufio.NewReader(resp.Body)
-    for {
-        line, err := reader.ReadString('\n')
-        if err != nil {
-            println(err.String())
-            return
-        }
-        line = strings.TrimSpace(line)
-
-        if len(line) == 0 {
-            continue
-        }
-
-        var tweet Tweet
-        json.Unmarshal(line, &tweet)
-
-        c.Stream <- tweet
-    }
-}
-
 // Follow a list of user ids
-func (c *Client) Follow(ids []int64) os.Error {
-    conn, err := net.Dial("tcp", "", filterUrl.Host+":80")
-    if err != nil {
-        return err
-    }
-    c.conn = http.NewClientConn(conn, nil)
-
-    var req http.Request
-    req.URL = filterUrl
-    req.Method = "POST"
-
+func (c *FilterStream) Follow(ids []int64) os.Error {
+    c.connLock.Lock()
+    println("in follow!")
     var body bytes.Buffer
     body.WriteString("follow=")
     for i, id := range ids {
@@ -129,25 +142,26 @@ func (c *Client) Follow(ids []int64) os.Error {
         }
     }
 
-    req.Body = nopCloser{&body}
-    req.ContentLength = int64(len(body.String()))
-    if c.Username != "" {
-        req.Header = map[string]string{
-            "Content-Type":  "application/x-www-form-urlencoded",
-            "Authorization": "Basic " + encodedAuth(c.Username, c.Password),
-        }
-    }
-    err = c.conn.Write(&req)
+    var sc streamConn
+    sc.authData = encodedAuth(c.Username, c.Password)
+    sc.postData = body.String()
+    resp, err := sc.connect()
     if err != nil {
         return err
     }
 
-    resp, err := c.conn.Read()
-    if err != nil {
-        return err
+    if resp.StatusCode != 200 {
+        return os.NewError("HTTP Error" + resp.Status)
     }
 
-    go c.readStream(resp)
+    if c.conn != nil {
+        c.conn.Close()
+    }
+
+    c.conn = &sc
+    sc.stream = c.Stream
+    go sc.readStream(resp)
+    c.connLock.Unlock()
 
     return nil
 }
