@@ -4,7 +4,6 @@ import (
     "bufio"
     "bytes"
     "encoding/base64"
-    "fmt"
     "http"
     "io"
     "json"
@@ -66,27 +65,31 @@ func (conn *streamConn) connect() (*http.Response, os.Error) {
 }
 
 func (conn *streamConn) readStream(resp *http.Response) {
-    reader := bufio.NewReader(resp.Body)
-    fmt.Println("Readstream started!")
+    var reader *bufio.Reader
+    reader = bufio.NewReader(resp.Body)
     for {
         line, err := reader.ReadString('\n')
         if err != nil {
-            println(err.String())
             //we've been closed
             if conn.stale {
+                println("Conn is stale", err.String())
                 return
             }
 
+            println("Reconnecting", err.String())
             //otherwise, reconnect
             resp, err := conn.connect()
             if err != nil {
                 println(err.String())
+                continue
             }
 
             if resp.StatusCode != 200 {
                 println("HTTP Error" + resp.Status)
+                continue
             }
 
+            reader = bufio.NewReader(resp.Body)
             continue
         }
         line = strings.TrimSpace(line)
@@ -132,7 +135,10 @@ func (nopCloser) Close() os.Error { return nil }
 // Follow a list of user ids
 func (c *FilterStream) Follow(ids []int64) os.Error {
     c.connLock.Lock()
-    println("in follow!")
+
+    if c.Stream == nil {
+        c.Stream = make(chan Tweet)
+    }
     var body bytes.Buffer
     body.WriteString("follow=")
     for i, id := range ids {
@@ -151,7 +157,7 @@ func (c *FilterStream) Follow(ids []int64) os.Error {
     }
 
     if resp.StatusCode != 200 {
-        return os.NewError("HTTP Error" + resp.Status)
+        return os.NewError("Twitterstream HTTP Error" + resp.Status)
     }
 
     if c.conn != nil {
