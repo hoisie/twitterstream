@@ -14,10 +14,13 @@ import (
     "sync"
 )
 
-var filterApi, _ = http.ParseURL("http://stream.twitter.com/1/statuses/filter.json")
+var filterUrl, _ = http.ParseURL("http://stream.twitter.com/1/statuses/filter.json")
+var sampleUrl, _ = http.ParseURL("http://stream.twitter.com/1/statuses/sample.json")
+
 
 type streamConn struct {
     clientConn *http.ClientConn
+    url        *http.URL
     stream     chan Tweet
     authData   string
     postData   string
@@ -31,23 +34,26 @@ func (conn *streamConn) Close() {
 }
 
 func (conn *streamConn) connect() (*http.Response, os.Error) {
-    tcpConn, err := net.Dial("tcp", "", filterApi.Host+":80")
+    tcpConn, err := net.Dial("tcp", "", conn.url.Host+":80")
     if err != nil {
         return nil, err
     }
     conn.clientConn = http.NewClientConn(tcpConn, nil)
 
     var req http.Request
-    req.URL = filterApi
-    req.Method = "POST"
-    req.Body = nopCloser{bytes.NewBufferString(conn.postData)}
-    req.ContentLength = int64(len(conn.postData))
-    req.Header = map[string]string{
-        "Content-Type": "application/x-www-form-urlencoded",
-    }
-
+    req.URL = conn.url
+    req.Method = "GET"
+    req.Header = map[string]string{}
     if conn.authData != "" {
         req.Header["Authorization"] = "Basic " + conn.authData
+    }
+
+    if conn.postData != "" {
+        println("post is not null!", conn.postData)
+        req.Method = "POST"
+        req.Body = nopCloser{bytes.NewBufferString(conn.postData)}
+        req.ContentLength = int64(len(conn.postData))
+        req.Header["Content-Type"] = "application/x-www-form-urlencoded"
     }
 
     err = conn.clientConn.Write(&req)
@@ -127,8 +133,8 @@ type nopCloser struct {
 
 func (nopCloser) Close() os.Error { return nil }
 
-// Follow a list of user ids
-func (c *Client) Follow(ids []int64) os.Error {
+// Filter a list of user ids
+func (c *Client) Filter(ids []int64) os.Error {
     c.connLock.Lock()
 
     if c.Stream == nil {
@@ -146,6 +152,39 @@ func (c *Client) Follow(ids []int64) os.Error {
     var sc streamConn
     sc.authData = encodedAuth(c.Username, c.Password)
     sc.postData = body.String()
+    sc.url = filterUrl
+    resp, err := sc.connect()
+    if err != nil {
+        return err
+    }
+
+    if resp.StatusCode != 200 {
+        return os.NewError("Twitterstream HTTP Error" + resp.Status)
+    }
+
+    if c.conn != nil {
+        c.conn.Close()
+    }
+
+    c.conn = &sc
+    sc.stream = c.Stream
+    go sc.readStream(resp)
+    c.connLock.Unlock()
+
+    return nil
+}
+
+// Filter a list of user ids
+func (c *Client) Sample() os.Error {
+    c.connLock.Lock()
+
+    if c.Stream == nil {
+        c.Stream = make(chan Tweet)
+    }
+
+    var sc streamConn
+    sc.authData = encodedAuth(c.Username, c.Password)
+    sc.url = sampleUrl
     resp, err := sc.connect()
     if err != nil {
         return err
