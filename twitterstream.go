@@ -25,7 +25,6 @@ type streamConn struct {
 }
 
 func (conn *streamConn) Close() {
-    println("closing the conn!")
     conn.stale = true
     tcpConn, _ := conn.clientConn.Close()
     tcpConn.Close()
@@ -72,20 +71,16 @@ func (conn *streamConn) readStream(resp *http.Response) {
         if err != nil {
             //we've been closed
             if conn.stale {
-                println("Conn is stale", err.String())
                 return
             }
 
-            println("Reconnecting", err.String())
             //otherwise, reconnect
             resp, err := conn.connect()
             if err != nil {
-                println(err.String())
                 continue
             }
 
             if resp.StatusCode != 200 {
-                println("HTTP Error" + resp.Status)
                 continue
             }
 
@@ -106,7 +101,7 @@ func (conn *streamConn) readStream(resp *http.Response) {
 }
 
 
-type FilterStream struct {
+type Client struct {
     Username string
     Password string
     Stream   chan Tweet
@@ -114,8 +109,8 @@ type FilterStream struct {
     connLock *sync.Mutex
 }
 
-func NewFilterStream(username, password string) *FilterStream {
-    return &FilterStream{username, password, make(chan Tweet), nil, new(sync.Mutex)}
+func NewClient(username, password string) *Client {
+    return &Client{username, password, make(chan Tweet), nil, new(sync.Mutex)}
 }
 
 func encodedAuth(user, pwd string) string {
@@ -133,7 +128,7 @@ type nopCloser struct {
 func (nopCloser) Close() os.Error { return nil }
 
 // Follow a list of user ids
-func (c *FilterStream) Follow(ids []int64) os.Error {
+func (c *Client) Follow(ids []int64) os.Error {
     c.connLock.Lock()
 
     if c.Stream == nil {
