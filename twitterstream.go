@@ -14,9 +14,9 @@ import (
     "sync"
 )
 
-var filterUrl, _ = http.ParseURL("http://stream.twitter.com/1/statuses/filter.json")
+var followUrl, _ = http.ParseURL("http://stream.twitter.com/1/statuses/filter.json")
+var trackUrl, _ = http.ParseURL("http://stream.twitter.com/1/statuses/filter.json")
 var sampleUrl, _ = http.ParseURL("http://stream.twitter.com/1/statuses/sample.json")
-
 
 type streamConn struct {
     clientConn *http.ClientConn
@@ -133,13 +133,41 @@ type nopCloser struct {
 
 func (nopCloser) Close() os.Error { return nil }
 
-// Filter a list of user ids
-func (c *Client) Filter(ids []int64) os.Error {
+func (c *Client) connect(url *http.URL, body string) (err os.Error) {
     c.connLock.Lock()
-
-    if c.Stream == nil {
-        c.Stream = make(chan Tweet)
+    var resp *http.Response
+    //initialize the new stream
+    var sc streamConn
+    sc.authData = encodedAuth(c.Username, c.Password)
+    sc.postData = body
+    sc.url = url
+    resp, err = sc.connect()
+    if err != nil {
+        goto Return
     }
+
+    if resp.StatusCode != 200 {
+        err = os.NewError("Twitterstream HTTP Error" + resp.Status)
+        goto Return
+    }
+
+    //close the current connection
+    if c.conn != nil {
+        c.conn.Close()
+    }
+
+    c.conn = &sc
+    sc.stream = c.Stream
+    go sc.readStream(resp)
+
+Return:
+    c.connLock.Unlock()
+    return
+}
+
+// Follow a list of user ids
+func (c *Client) Follow(ids []int64) os.Error {
+
     var body bytes.Buffer
     body.WriteString("follow=")
     for i, id := range ids {
@@ -148,60 +176,22 @@ func (c *Client) Filter(ids []int64) os.Error {
             body.WriteString(",")
         }
     }
+    return c.connect(followUrl, body.String())
+}
 
-    var sc streamConn
-    sc.authData = encodedAuth(c.Username, c.Password)
-    sc.postData = body.String()
-    sc.url = filterUrl
-    resp, err := sc.connect()
-    if err != nil {
-        return err
+// Follow a list of user ids
+func (c *Client) Track(topics []string) os.Error {
+
+    var body bytes.Buffer
+    body.WriteString("track=")
+    for i, topic := range topics {
+        body.WriteString(topic)
+        if i != len(topics)-1 {
+            body.WriteString(",")
+        }
     }
-
-    if resp.StatusCode != 200 {
-        return os.NewError("Twitterstream HTTP Error" + resp.Status)
-    }
-
-    if c.conn != nil {
-        c.conn.Close()
-    }
-
-    c.conn = &sc
-    sc.stream = c.Stream
-    go sc.readStream(resp)
-    c.connLock.Unlock()
-
-    return nil
+    return c.connect(trackUrl, body.String())
 }
 
 // Filter a list of user ids
-func (c *Client) Sample() os.Error {
-    c.connLock.Lock()
-
-    if c.Stream == nil {
-        c.Stream = make(chan Tweet)
-    }
-
-    var sc streamConn
-    sc.authData = encodedAuth(c.Username, c.Password)
-    sc.url = sampleUrl
-    resp, err := sc.connect()
-    if err != nil {
-        return err
-    }
-
-    if resp.StatusCode != 200 {
-        return os.NewError("Twitterstream HTTP Error" + resp.Status)
-    }
-
-    if c.conn != nil {
-        c.conn.Close()
-    }
-
-    c.conn = &sc
-    sc.stream = c.Stream
-    go sc.readStream(resp)
-    c.connLock.Unlock()
-
-    return nil
-}
+func (c *Client) Sample() os.Error { return c.connect(sampleUrl, "") }
