@@ -49,7 +49,6 @@ func (conn *streamConn) connect() (*http.Response, os.Error) {
     }
 
     if conn.postData != "" {
-        println("post is not null!", conn.postData)
         req.Method = "POST"
         req.Body = nopCloser{bytes.NewBufferString(conn.postData)}
         req.ContentLength = int64(len(conn.postData))
