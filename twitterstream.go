@@ -15,12 +15,15 @@ import (
     "time"
 )
 
-var filterApi, _ = http.ParseURL("http://stream.twitter.com/1/statuses/filter.json")
+var followUrl, _ = http.ParseURL("http://stream.twitter.com/1/statuses/filter.json")
+var trackUrl, _ = http.ParseURL("http://stream.twitter.com/1/statuses/filter.json")
+var sampleUrl, _ = http.ParseURL("http://stream.twitter.com/1/statuses/sample.json")
 
 var retryTimeout int64 = 5e9
 
 type streamConn struct {
     clientConn *http.ClientConn
+    url        *http.URL
     stream     chan Tweet
     authData   string
     postData   string
@@ -28,30 +31,31 @@ type streamConn struct {
 }
 
 func (conn *streamConn) Close() {
-    println("closing the conn!")
     conn.stale = true
     tcpConn, _ := conn.clientConn.Close()
     tcpConn.Close()
 }
 
 func (conn *streamConn) connect() (*http.Response, os.Error) {
-    tcpConn, err := net.Dial("tcp", "", filterApi.Host+":80")
+    tcpConn, err := net.Dial("tcp", "", conn.url.Host+":80")
     if err != nil {
         return nil, err
     }
     conn.clientConn = http.NewClientConn(tcpConn, nil)
 
     var req http.Request
-    req.URL = filterApi
-    req.Method = "POST"
-    req.Body = nopCloser{bytes.NewBufferString(conn.postData)}
-    req.ContentLength = int64(len(conn.postData))
-    req.Header = map[string]string{
-        "Content-Type": "application/x-www-form-urlencoded",
-    }
-
+    req.URL = conn.url
+    req.Method = "GET"
+    req.Header = map[string]string{}
     if conn.authData != "" {
         req.Header["Authorization"] = "Basic " + conn.authData
+    }
+
+    if conn.postData != "" {
+        req.Method = "POST"
+        req.Body = nopCloser{bytes.NewBufferString(conn.postData)}
+        req.ContentLength = int64(len(conn.postData))
+        req.Header["Content-Type"] = "application/x-www-form-urlencoded"
     }
 
     err = conn.clientConn.Write(&req)
@@ -75,11 +79,9 @@ func (conn *streamConn) readStream(resp *http.Response) {
         if err != nil {
             //we've been closed
             if conn.stale {
-                println("Conn is stale", err.String())
                 return
             }
 
-            println("Reconnecting", err.String())
             //otherwise, reconnect
             resp, err := conn.connect()
             if err != nil {
@@ -90,7 +92,6 @@ func (conn *streamConn) readStream(resp *http.Response) {
             }
 
             if resp.StatusCode != 200 {
-                println("HTTP Error" + resp.Status)
                 continue
             }
 
@@ -111,7 +112,7 @@ func (conn *streamConn) readStream(resp *http.Response) {
 }
 
 
-type FilterStream struct {
+type Client struct {
     Username string
     Password string
     Stream   chan Tweet
@@ -119,8 +120,8 @@ type FilterStream struct {
     connLock *sync.Mutex
 }
 
-func NewFilterStream(username, password string) *FilterStream {
-    return &FilterStream{username, password, make(chan Tweet), nil, new(sync.Mutex)}
+func NewClient(username, password string) *Client {
+    return &Client{username, password, make(chan Tweet), nil, new(sync.Mutex)}
 }
 
 func encodedAuth(user, pwd string) string {
@@ -137,13 +138,41 @@ type nopCloser struct {
 
 func (nopCloser) Close() os.Error { return nil }
 
-// Follow a list of user ids
-func (c *FilterStream) Follow(ids []int64) os.Error {
+func (c *Client) connect(url *http.URL, body string) (err os.Error) {
     c.connLock.Lock()
-
-    if c.Stream == nil {
-        c.Stream = make(chan Tweet)
+    var resp *http.Response
+    //initialize the new stream
+    var sc streamConn
+    sc.authData = encodedAuth(c.Username, c.Password)
+    sc.postData = body
+    sc.url = url
+    resp, err = sc.connect()
+    if err != nil {
+        goto Return
     }
+
+    if resp.StatusCode != 200 {
+        err = os.NewError("Twitterstream HTTP Error" + resp.Status)
+        goto Return
+    }
+
+    //close the current connection
+    if c.conn != nil {
+        c.conn.Close()
+    }
+
+    c.conn = &sc
+    sc.stream = c.Stream
+    go sc.readStream(resp)
+
+Return:
+    c.connLock.Unlock()
+    return
+}
+
+// Follow a list of user ids
+func (c *Client) Follow(ids []int64) os.Error {
+
     var body bytes.Buffer
     body.WriteString("follow=")
     for i, id := range ids {
@@ -152,27 +181,22 @@ func (c *FilterStream) Follow(ids []int64) os.Error {
             body.WriteString(",")
         }
     }
-
-    var sc streamConn
-    sc.authData = encodedAuth(c.Username, c.Password)
-    sc.postData = body.String()
-    resp, err := sc.connect()
-    if err != nil {
-        return err
-    }
-
-    if resp.StatusCode != 200 {
-        return os.NewError("Twitterstream HTTP Error" + resp.Status)
-    }
-
-    if c.conn != nil {
-        c.conn.Close()
-    }
-
-    c.conn = &sc
-    sc.stream = c.Stream
-    go sc.readStream(resp)
-    c.connLock.Unlock()
-
-    return nil
+    return c.connect(followUrl, body.String())
 }
+
+// Follow a list of user ids
+func (c *Client) Track(topics []string) os.Error {
+
+    var body bytes.Buffer
+    body.WriteString("track=")
+    for i, topic := range topics {
+        body.WriteString(topic)
+        if i != len(topics)-1 {
+            body.WriteString(",")
+        }
+    }
+    return c.connect(trackUrl, body.String())
+}
+
+// Filter a list of user ids
+func (c *Client) Sample() os.Error { return c.connect(sampleUrl, "") }
