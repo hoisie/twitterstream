@@ -12,9 +12,12 @@ import (
     "strconv"
     "strings"
     "sync"
+    "time"
 )
 
 var filterApi, _ = http.ParseURL("http://stream.twitter.com/1/statuses/filter.json")
+
+var retryTimeout int64 = 5e9
 
 type streamConn struct {
     clientConn *http.ClientConn
@@ -81,6 +84,8 @@ func (conn *streamConn) readStream(resp *http.Response) {
             resp, err := conn.connect()
             if err != nil {
                 println(err.String())
+                println("Reconnecting after 5 seconds")
+                time.Sleep(retryTimeout)
                 continue
             }
 
