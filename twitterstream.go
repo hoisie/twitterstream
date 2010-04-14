@@ -200,3 +200,7 @@ func (c *Client) Track(topics []string) os.Error {
 
 // Filter a list of user ids
 func (c *Client) Sample() os.Error { return c.connect(sampleUrl, "") }
+
+// Close the client
+func (c *Client) Close() { c.conn.Close() }
+
