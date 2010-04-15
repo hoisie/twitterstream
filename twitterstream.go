@@ -33,7 +33,9 @@ type streamConn struct {
 func (conn *streamConn) Close() {
     conn.stale = true
     tcpConn, _ := conn.clientConn.Close()
-    tcpConn.Close()
+    if tcpConn != nil {
+        tcpConn.Close()
+    }
 }
 
 func (conn *streamConn) connect() (*http.Response, os.Error) {
@@ -202,5 +204,10 @@ func (c *Client) Track(topics []string) os.Error {
 func (c *Client) Sample() os.Error { return c.connect(sampleUrl, "") }
 
 // Close the client
-func (c *Client) Close() { c.conn.Close() }
-
+func (c *Client) Close() {
+    //has it already been closed?
+    if c.conn.stale {
+        return
+    }
+    c.conn.Close()
+}
