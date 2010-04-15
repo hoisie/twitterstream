@@ -49,9 +49,7 @@ func (conn *streamConn) connect() (*http.Response, os.Error) {
     req.URL = conn.url
     req.Method = "GET"
     req.Header = map[string]string{}
-    if conn.authData != "" {
-        req.Header["Authorization"] = "Basic " + conn.authData
-    }
+    req.Header["Authorization"] = "Basic " + conn.authData
 
     if conn.postData != "" {
         req.Method = "POST"
@@ -88,7 +86,6 @@ func (conn *streamConn) readStream(resp *http.Response) {
             resp, err := conn.connect()
             if err != nil {
                 println(err.String())
-                println("Reconnecting after 5 seconds")
                 time.Sleep(retryTimeout)
                 continue
             }
@@ -141,10 +138,15 @@ type nopCloser struct {
 func (nopCloser) Close() os.Error { return nil }
 
 func (c *Client) connect(url *http.URL, body string) (err os.Error) {
+    if c.Username == "" || c.Password == "" {
+	return os.NewError("The username or password is invalid")
+    }
+
     c.connLock.Lock()
     var resp *http.Response
     //initialize the new stream
     var sc streamConn
+    
     sc.authData = encodedAuth(c.Username, c.Password)
     sc.postData = body
     sc.url = url
@@ -186,7 +188,7 @@ func (c *Client) Follow(ids []int64) os.Error {
     return c.connect(followUrl, body.String())
 }
 
-// Follow a list of user ids
+// Track a list of topics
 func (c *Client) Track(topics []string) os.Error {
 
     var body bytes.Buffer
