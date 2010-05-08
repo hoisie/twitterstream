@@ -10,7 +10,6 @@ import (
     "os"
     "net"
     "strconv"
-    "strings"
     "sync"
     "time"
 )
@@ -75,7 +74,7 @@ func (conn *streamConn) readStream(resp *http.Response) {
     var reader *bufio.Reader
     reader = bufio.NewReader(resp.Body)
     for {
-        line, err := reader.ReadString('\n')
+        line, err := reader.ReadBytes('\n')
         if err != nil {
             //we've been closed
             if conn.stale {
@@ -97,7 +96,7 @@ func (conn *streamConn) readStream(resp *http.Response) {
             reader = bufio.NewReader(resp.Body)
             continue
         }
-        line = strings.TrimSpace(line)
+        line = bytes.TrimSpace(line)
 
         if len(line) == 0 {
             continue
@@ -139,14 +138,14 @@ func (nopCloser) Close() os.Error { return nil }
 
 func (c *Client) connect(url *http.URL, body string) (err os.Error) {
     if c.Username == "" || c.Password == "" {
-	return os.NewError("The username or password is invalid")
+        return os.NewError("The username or password is invalid")
     }
 
     c.connLock.Lock()
     var resp *http.Response
     //initialize the new stream
     var sc streamConn
-    
+
     sc.authData = encodedAuth(c.Username, c.Password)
     sc.postData = body
     sc.url = url
