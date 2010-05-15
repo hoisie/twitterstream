@@ -30,14 +30,14 @@ type streamConn struct {
 }
 
 func (conn *streamConn) Close() {
+    // Just mark the connection as stale, and let the connect() handler close after a read
     conn.stale = true
-    tcpConn, _ := conn.clientConn.Close()
-    if tcpConn != nil {
-        tcpConn.Close()
-    }
 }
 
 func (conn *streamConn) connect() (*http.Response, os.Error) {
+    if conn.stale {
+        return nil, os.NewError("Stale connection")
+    }
     tcpConn, err := net.Dial("tcp", "", conn.url.Host+":80")
     if err != nil {
         return nil, err
@@ -74,14 +74,19 @@ func (conn *streamConn) readStream(resp *http.Response) {
     var reader *bufio.Reader
     reader = bufio.NewReader(resp.Body)
     for {
+        //we've been closed
+        if conn.stale {
+            tcpConn, _ := conn.clientConn.Close()
+            if tcpConn != nil {
+                tcpConn.Close()
+            }
+            break
+        }
         line, err := reader.ReadBytes('\n')
         if err != nil {
-            //we've been closed
             if conn.stale {
-                return
+                continue
             }
-
-            //otherwise, reconnect
             resp, err := conn.connect()
             if err != nil {
                 println(err.String())
