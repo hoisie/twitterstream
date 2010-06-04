@@ -38,7 +38,14 @@ func (conn *streamConn) connect() (*http.Response, os.Error) {
     if conn.stale {
         return nil, os.NewError("Stale connection")
     }
-    tcpConn, err := net.Dial("tcp", "", conn.url.Host+":80")
+    var tcpConn net.Conn
+    var err os.Error
+    if proxy := os.Getenv("HTTP_PROXY"); len(proxy) > 0 {
+        proxy_url, _ := http.ParseURL(proxy);
+        tcpConn, err = net.Dial("tcp", "", proxy_url.Host);
+    } else {
+        tcpConn, err = net.Dial("tcp", "", conn.url.Host+":80")
+    }
     if err != nil {
         return nil, err
     }
