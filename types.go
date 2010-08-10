@@ -1,5 +1,6 @@
 package twitterstream
 
+
 type User struct {
     Lang                         string
     Verified                     bool
@@ -44,4 +45,15 @@ type Tweet struct {
     Id                      int64
     Created_at              string
     User                    User
+}
+
+type Event struct {
+	Target User
+	Source User
+	Created_at string
+	Event string
+}
+
+type FriendList struct {
+	Friends []int64
 }
