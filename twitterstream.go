@@ -23,15 +23,14 @@ var userUrl, _ = http.ParseURL("http://betastream.twitter.com/2b/user.json")
 var retryTimeout int64 = 5e9
 
 type streamConn struct {
-    clientConn *http.ClientConn
-    url        *http.URL
-    stream     chan Tweet
-    eventStream chan Event
+    clientConn   *http.ClientConn
+    url          *http.URL
+    stream       chan Tweet
+    eventStream  chan Event
     friendStream chan FriendList
-    authData   string
-    postData   string
-    stale      bool
-    
+    authData     string
+    postData     string
+    stale        bool
 }
 
 func (conn *streamConn) Close() {
@@ -46,8 +45,8 @@ func (conn *streamConn) connect() (*http.Response, os.Error) {
     var tcpConn net.Conn
     var err os.Error
     if proxy := os.Getenv("HTTP_PROXY"); len(proxy) > 0 {
-        proxy_url, _ := http.ParseURL(proxy);
-        tcpConn, err = net.Dial("tcp", "", proxy_url.Host);
+        proxy_url, _ := http.ParseURL(proxy)
+        tcpConn, err = net.Dial("tcp", "", proxy_url.Host)
     } else {
         tcpConn, err = net.Dial("tcp", "", conn.url.Host+":80")
     }
@@ -83,7 +82,7 @@ func (conn *streamConn) connect() (*http.Response, os.Error) {
 }
 
 func (conn *streamConn) readStream(resp *http.Response) {
-	
+
     var reader *bufio.Reader
     reader = bufio.NewReader(resp.Body)
     for {
@@ -95,7 +94,7 @@ func (conn *streamConn) readStream(resp *http.Response) {
             }
             break
         }
-        
+
         line, err := reader.ReadBytes('\n')
         if err != nil {
             if conn.stale {
@@ -122,20 +121,20 @@ func (conn *streamConn) readStream(resp *http.Response) {
         }
         switch {
         default:
-        	println(string(line))
+            println(string(line))
         case strings.Index(string(line), "\"event\":\"") > -1:
-        	var userEvent Event
-	    	json.Unmarshal(line, &userEvent)
-	    	conn.eventStream <- userEvent
-	    case strings.Index(string(line), "\"coordinates\":") > -1:
-        	var tweet Tweet
-	        json.Unmarshal(line, &tweet)
-	        conn.stream <- tweet
+            var userEvent Event
+            json.Unmarshal(line, &userEvent)
+            conn.eventStream <- userEvent
+        case strings.Index(string(line), "\"coordinates\":") > -1:
+            var tweet Tweet
+            json.Unmarshal(line, &tweet)
+            conn.stream <- tweet
         case strings.Index(string(line), "\"friends\":") > -1:
-        	var friends FriendList
-	        json.Unmarshal(line, &friends)
-	        conn.friendStream <- friends
-        } 
+            var friends FriendList
+            json.Unmarshal(line, &friends)
+            conn.friendStream <- friends
+        }
     }
 }
 
@@ -156,12 +155,12 @@ func (nopCloser) Close() os.Error { return nil }
 
 
 type Client struct {
-    Username string
-	Password string
-	Stream   chan Tweet
-	EventStream   chan Event
-	FriendStream   chan FriendList
-	conn     *streamConn
+    Username     string
+    Password     string
+    Stream       chan Tweet
+    EventStream  chan Event
+    FriendStream chan FriendList
+    conn         *streamConn
 }
 
 func NewClient(username, password string) *Client {
@@ -247,4 +246,3 @@ func (c *Client) Close() {
     }
     c.conn.Close()
 }
-
