@@ -7,27 +7,24 @@ The User Stream connection support a single function User which populates a Frie
 Here is some example of getting a sample twitter stream and user stream. You need to include a valid twitter screen name and password:
 
     package main
-    
-    import (
-    	"twitterstream"
-    	"fmt"	
-    )
+
+    import "twitterstream"
     
     func main() {
-    	client := twitterstream.NewClient("username", "password")
-    	err := client.User()
-    	if err != nil {
-    	    println(err.String())
-    	}
-    	for {
-    	     select {
-    	        case f := <- client.FriendStream:
-    	            println("Friends", len(f.Friends))
-    	        case e := <- client.EventStream:
-    	            println("Event", e.Event)
-    	        case tweet := <- client.Stream:
-    	           println("Tweet", tweet.User.Screen_name)
-    	     }
-    	}
+            client := twitterstream.NewClient("username", "password")
+            err := client.User()
+            if err != nil {
+                    println(err.String())
+            }
+            for {
+                    select {
+                    case f := <-client.FriendStream:
+                            println("Friends", len(f.Friends))
+                    case e := <-client.EventStream:
+                            println("Event", e.Event)
+                    case tweet := <-client.Stream:
+                            println("Tweet", tweet.User.Screen_name)
+                    }
+            }
     }
-    
+
