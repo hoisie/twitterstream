@@ -10,18 +10,11 @@ import (
     "os"
     "net"
     "strconv"
-    "sync"
     "time"
     "strings"
 )
 
-const (
-	CLIENT_TYPE_DEFAULT int = 0
-	CLIENT_TYPE_USER int = 1
-	STREAM_DEFAULT_DELIMITER byte = '\n'
-	STREAM_USER_DELIMITER byte = '\r'
-	
-)
+
 var followUrl, _ = http.ParseURL("http://stream.twitter.com/1/statuses/filter.json")
 var trackUrl, _ = http.ParseURL("http://stream.twitter.com/1/statuses/filter.json")
 var sampleUrl, _ = http.ParseURL("http://stream.twitter.com/1/statuses/sample.json")
@@ -34,11 +27,10 @@ type streamConn struct {
     url        *http.URL
     stream     chan Tweet
     eventStream chan Event
-    friendListStream chan FriendList
+    friendStream chan FriendList
     authData   string
     postData   string
     stale      bool
-    clientType int
     
 }
 
@@ -103,11 +95,8 @@ func (conn *streamConn) readStream(resp *http.Response) {
             }
             break
         }
-        delimeter := STREAM_DEFAULT_DELIMITER
-        if conn.clientType == CLIENT_TYPE_USER {
-        	delimeter = STREAM_USER_DELIMITER
-        }
-        line, err := reader.ReadBytes(delimeter)
+        
+        line, err := reader.ReadBytes('\n')
         if err != nil {
             if conn.stale {
                 continue
@@ -145,7 +134,7 @@ func (conn *streamConn) readStream(resp *http.Response) {
         case strings.Index(string(line), "\"friends\":") > -1:
         	var friends FriendList
 	        json.Unmarshal(line, &friends)
-	        conn.friendListStream <- friends
+	        conn.friendStream <- friends
         } 
     }
 }
@@ -166,30 +155,28 @@ type nopCloser struct {
 func (nopCloser) Close() os.Error { return nil }
 
 
-type ClientInterface interface {
-	Username() string
-	Password() string
-	TweetStream() chan Tweet
-	EventStream() chan Event
-	FriendListStream() chan FriendList 
-	SetConnection(sc *streamConn)
-	Connection() *streamConn
-	ConnectionLock() *sync.Mutex
-	ClientType() int
-
+type Client struct {
+    Username string
+	Password string
+	Stream   chan Tweet
+	EventStream   chan Event
+	FriendStream   chan FriendList
+	conn     *streamConn
 }
 
-func connect(c ClientInterface, url *http.URL, body string) (err os.Error) {
-    if c.Username() == "" || c.Password() == "" {
+func NewClient(username, password string) *Client {
+    return &Client{username, password, make(chan Tweet), make(chan Event), make(chan FriendList), nil}
+}
+func (c *Client) connect(url *http.URL, body string) (err os.Error) {
+    if c.Username == "" || c.Password == "" {
         return os.NewError("The username or password is invalid")
     }
 
-    c.ConnectionLock().Lock()
     var resp *http.Response
     //initialize the new stream
     var sc streamConn
 
-    sc.authData = encodedAuth(c.Username(), c.Password())
+    sc.authData = encodedAuth(c.Username, c.Password)
     sc.postData = body
     sc.url = url
     resp, err = sc.connect()
@@ -203,68 +190,19 @@ func connect(c ClientInterface, url *http.URL, body string) (err os.Error) {
     }
 
     //close the current connection
-    if c.Connection() != nil {
-        c.Connection().Close()
+    if c.conn != nil {
+        c.conn.Close()
     }
 
-    c.SetConnection(&sc)
-   	sc.clientType = c.ClientType()
-   	sc.stream = c.TweetStream()
-   	sc.eventStream = c.EventStream()
-   	sc.friendListStream = c.FriendListStream()
+    c.conn = &sc
+    sc.stream = c.Stream
+    sc.eventStream = c.EventStream
+    sc.friendStream = c.FriendStream
     go sc.readStream(resp)
 
 Return:
-    c.ConnectionLock().Unlock()
     return
 }
-
-
-type Client struct {
-    userName string
-    password string
-    tweetStream   chan Tweet
-    eventStream chan Event
-    friendListStream chan FriendList
-    conn     *streamConn
-    connLock *sync.Mutex
-    clientType int
-}
-
-func NewClient(username, password string) *Client {
-    return &Client{username, password, make(chan Tweet), make(chan Event), make(chan FriendList), nil, new(sync.Mutex), CLIENT_TYPE_DEFAULT}
-}
-func (c *Client) connect(url *http.URL, body string) (err os.Error) {
-	return connect(c, url, body)
-}
-func (c *Client) Username() string {
-	return c.userName
-}
-func (c *Client) Password() string {
-	return c.password
-}
-func (c *Client) TweetStream() chan Tweet {
-	return c.tweetStream
-}
-func (c *Client) EventStream() chan Event {
-	return c.eventStream
-}
-func (c *Client) FriendListStream() chan FriendList {
-	return c.friendListStream
-}
-func (c *Client) Connection() *streamConn {
-	return c.conn
-}
-func (c *Client) SetConnection(sc *streamConn) {
-	c.conn = sc
-}
-func (c *Client) ConnectionLock() *sync.Mutex {
-	return c.connLock
-}
-func (c *Client) ClientType() int {
-	return c.clientType
-}
-
 
 // Follow a list of user ids
 func (c *Client) Follow(ids []int64) os.Error {
@@ -297,50 +235,9 @@ func (c *Client) Track(topics []string) os.Error {
 // Filter a list of user ids
 func (c *Client) Sample() os.Error { return c.connect(sampleUrl, "") }
 
-type UserClient Client;
-
-func NewUserClient(username, password string) *UserClient {
-    return &UserClient{username, password, make(chan Tweet), make(chan Event), make(chan FriendList), nil, new(sync.Mutex), CLIENT_TYPE_USER}
-}
-
-func (c *UserClient) connect(url *http.URL, body string) (err os.Error) {
-	return connect(c, url, body)
-}
-func (c *UserClient) Username() string {
-	return c.userName
-}
-func (c *UserClient) Password() string {
-	return c.password
-}
-func (c *UserClient) TweetStream() chan Tweet {
-	return c.tweetStream
-}
-func (c *UserClient) EventStream() chan Event {
-	return c.eventStream
-}
-func (c *UserClient) FriendListStream() chan FriendList {
-	return c.friendListStream
-}
-func (c *UserClient) Connection() *streamConn {
-	return c.conn
-}
-func (c *UserClient) SetConnection(sc *streamConn) {
-	c.conn = sc
-}
-func (c *UserClient) ConnectionLock() *sync.Mutex {
-	return c.connLock
-}
-func (c *UserClient) ClientType() int {
-	return c.clientType
-}
-
 // Track User tweets and events
-func (c *UserClient) User() os.Error {
-	if c.clientType != CLIENT_TYPE_USER {
-		panic("Client must be CLIENT_TYPE_USER")
-	}
-    var body bytes.Buffer
-    return c.connect(userUrl, body.String())
+func (c *Client) User() os.Error {
+    return c.connect(userUrl, "")
 }
 // Close the client
 func (c *Client) Close() {
@@ -350,3 +247,4 @@ func (c *Client) Close() {
     }
     c.conn.Close()
 }
+
