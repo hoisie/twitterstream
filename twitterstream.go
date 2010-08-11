@@ -11,7 +11,6 @@ import (
     "net"
     "strconv"
     "time"
-    "strings"
 )
 
 
@@ -120,20 +119,20 @@ func (conn *streamConn) readStream(resp *http.Response) {
             continue
         }
         switch {
-        default:
-            println(string(line))
-        case strings.Index(string(line), "\"event\":\"") > -1:
-            var userEvent Event
-            json.Unmarshal(line, &userEvent)
-            conn.eventStream <- userEvent
-        case strings.Index(string(line), "\"coordinates\":") > -1:
-            var tweet Tweet
-            json.Unmarshal(line, &tweet)
-            conn.stream <- tweet
-        case strings.Index(string(line), "\"friends\":") > -1:
+        case bytes.HasPrefix(line, []byte(`{"event":`)):
+            var event Event
+            json.Unmarshal(line, &event)
+            conn.eventStream <- event
+        case bytes.HasPrefix(line, []byte(`{"friends":`)):
             var friends FriendList
             json.Unmarshal(line, &friends)
             conn.friendStream <- friends
+        default:
+            var tweet Tweet
+            json.Unmarshal(line, &tweet)
+            if tweet.Id != 0 {
+                conn.stream <- tweet
+            }
         }
     }
 }
