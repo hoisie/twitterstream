@@ -17,7 +17,7 @@ import (
 var followUrl, _ = http.ParseURL("http://stream.twitter.com/1/statuses/filter.json")
 var trackUrl, _ = http.ParseURL("http://stream.twitter.com/1/statuses/filter.json")
 var sampleUrl, _ = http.ParseURL("http://stream.twitter.com/1/statuses/sample.json")
-var userUrl, _ = http.ParseURL("http://betastream.twitter.com/2b/user.json")
+var userUrl, _ = http.ParseURL("http://userstream.twitter.com/2/user.json")
 
 var retryTimeout int64 = 5e9
 
@@ -183,7 +183,8 @@ func (c *Client) connect(url *http.URL, body string) (err os.Error) {
     }
 
     if resp.StatusCode != 200 {
-        err = os.NewError("Twitterstream HTTP Error" + resp.Status)
+        err = os.NewError("Twitterstream HTTP Error: " + resp.Status +
+        "\n" + url.Path)
         goto Return
     }
 
