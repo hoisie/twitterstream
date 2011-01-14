@@ -241,7 +241,7 @@ func (c *Client) User() os.Error {
 // Close the client
 func (c *Client) Close() {
     //has it already been closed?
-    if c.conn.stale {
+    if c.conn == nil || c.conn.stale {
         return
     }
     c.conn.Close()
