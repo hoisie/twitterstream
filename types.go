@@ -44,6 +44,7 @@ type Tweet struct {
     Id                      int64
     Created_at              string
     User                    User
+    Json                    string
 }
 
 type Event struct {
