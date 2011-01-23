@@ -14,10 +14,12 @@ import (
 )
 
 
-var followUrl, _ = http.ParseURL("http://stream.twitter.com/1/statuses/filter.json")
+var followUrl, _ = http.ParseURL("https://stream.twitter.com/1/statuses/filter.json")
 var trackUrl, _ = http.ParseURL("http://stream.twitter.com/1/statuses/filter.json")
 var sampleUrl, _ = http.ParseURL("http://stream.twitter.com/1/statuses/sample.json")
 var userUrl, _ = http.ParseURL("http://userstream.twitter.com/2/user.json")
+var siteStreamUrl, _ = http.ParseURL("https://betastream.twitter.com/2b/site.json")
+
 
 var retryTimeout int64 = 5e9
 
@@ -165,6 +167,7 @@ type Client struct {
 func NewClient(username, password string) *Client {
     return &Client{username, password, make(chan Tweet), make(chan Event), make(chan FriendList), nil}
 }
+
 func (c *Client) connect(url *http.URL, body string) (err os.Error) {
     if c.Username == "" || c.Password == "" {
         return os.NewError("The username or password is invalid")
@@ -184,7 +187,7 @@ func (c *Client) connect(url *http.URL, body string) (err os.Error) {
 
     if resp.StatusCode != 200 {
         err = os.NewError("Twitterstream HTTP Error: " + resp.Status +
-        "\n" + url.Path)
+            "\n" + url.Path)
         goto Return
     }
 
@@ -246,3 +249,4 @@ func (c *Client) Close() {
     }
     c.conn.Close()
 }
+
