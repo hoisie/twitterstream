@@ -241,6 +241,7 @@ func (c *Client) Sample() os.Error { return c.connect(sampleUrl, "") }
 func (c *Client) User() os.Error {
     return c.connect(userUrl, "")
 }
+
 // Close the client
 func (c *Client) Close() {
     //has it already been closed?
@@ -249,4 +250,3 @@ func (c *Client) Close() {
     }
     c.conn.Close()
 }
-

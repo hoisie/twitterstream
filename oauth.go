@@ -1,6 +1,7 @@
 package twitterstream
 
 import (
+    "bufio"
     "bytes"
     "container/vector"
     "crypto/hmac"
@@ -8,9 +9,11 @@ import (
     "fmt"
     "http"
     "httplib"
+    "json"
     "os"
     "rand"
     "sort"
+    "strings"
     "strconv"
     "time"
 )
@@ -20,10 +23,28 @@ var accessTokenUrl, _ = http.ParseURL("https://api.twitter.com/oauth/access_toke
 var authorizeUrl, _ = http.ParseURL("https://api.twitter.com/oauth/authorize")
 
 type OAuthClient struct {
-    ConsumerKey      string
-    ConsumerSecret   string
-    OAuthToken       string
-    OAuthTokenSecret string
+    ConsumerKey    string
+    ConsumerSecret string
+    Stream         chan Tweet
+    //the ccurrent connection to the stream client
+    streamClient *oauthStreamClient
+}
+
+type oauthStreamClient struct {
+    httpClient *httplib.HttpRequestBuilder
+    headers    map[string]string
+    params     map[string]string
+    url        string
+    closed     bool
+    stream     chan Tweet
+}
+
+func NewOAuthClient(consumerKey string, consumerSecret string) *OAuthClient {
+    return &OAuthClient{
+        ConsumerKey:    consumerKey,
+        ConsumerSecret: consumerSecret,
+        Stream:         make(chan Tweet),
+    }
 }
 
 type RequestToken struct {
@@ -81,7 +102,6 @@ func signRequest(base string, consumerSecret string, tokenSecret string) string 
     if tokenSecret != "" {
         signingKey += URLEscape(tokenSecret)
     }
-
     hash := hmac.NewSHA1([]byte(signingKey))
     hash.Write([]byte(base))
     sum := hash.Sum()
@@ -182,34 +202,153 @@ func (o *OAuthClient) GetAccessToken(requestToken *RequestToken, OAuthVerifier s
 
 }
 
-func (o *OAuthClient) OAuthConnect(url string) (*http.Response, os.Error) {
+func (c *oauthStreamClient) connect() (*http.Response, os.Error) {
+    c.httpClient = httplib.Post(c.url)
+    for k, v := range c.headers {
+        c.httpClient.Header(k, v)
+    }
+
+    var body bytes.Buffer
+    for k, v := range c.params {
+        body.WriteString(URLEscape(k))
+        body.WriteString("=")
+        body.WriteString(URLEscape(v))
+    }
+    c.httpClient.Body(body.String())
+
+    //make the new connection
+    return c.httpClient.AsResponse()
+}
+
+func (c *oauthStreamClient) readStream(resp *http.Response) {
+    var reader *bufio.Reader
+    reader = bufio.NewReader(resp.Body)
+    for {
+        //we've been closed
+        if c.closed {
+            c.httpClient.Close()
+            break
+        }
+
+        line, err := reader.ReadBytes('\n')
+        if err != nil {
+            if c.closed {
+                continue
+            }
+            resp, err := c.connect()
+            if err != nil {
+                println(err.String())
+                time.Sleep(retryTimeout)
+                continue
+            }
+
+            if resp.StatusCode != 200 {
+                continue
+            }
+
+            reader = bufio.NewReader(resp.Body)
+            continue
+        }
+        line = bytes.TrimSpace(line)
+
+        if len(line) == 0 {
+            continue
+        }
+
+        var message SiteStreamMessage
+        json.Unmarshal(line, &message)
+        if message.Message.Id != 0 {
+            c.stream <- message.Message
+        }
+    }
+}
+
+func (c *oauthStreamClient) close() {
+    c.closed = true
+    c.httpClient.Close()
+
+}
+
+func (o *OAuthClient) connect(url string, OAuthToken string, OAuthTokenSecret string, form map[string]string) os.Error {
     nonce := getNonce(40)
+
     params := map[string]string{
         "oauth_nonce":            nonce,
-        "oauth_token":            o.OAuthToken,
+        "oauth_token":            OAuthToken,
         "oauth_signature_method": "HMAC-SHA1",
         "oauth_timestamp":        strconv.Itoa64(time.Seconds()),
         "oauth_consumer_key":     o.ConsumerKey,
         "oauth_version":          "1.0",
     }
 
-    base := signatureBase("GET", url, params)
-    signature := signRequest(base, o.ConsumerSecret, o.OAuthTokenSecret)
+    //add the form to the params
+    for k, v := range form {
+        params[URLEscape(k)] = URLEscape(v)
+    }
+
+    base := signatureBase("POST", url, params)
+    signature := signRequest(base, o.ConsumerSecret, OAuthTokenSecret)
 
     params["oauth_signature"] = URLEscape(signature)
 
     authBuf := bytes.NewBufferString("OAuth ")
-    i := 0
     for k, v := range params {
-        authBuf.WriteString(fmt.Sprintf("%s=%q", k, v))
-        if i < len(params)-1 {
-            authBuf.WriteString(", ")
+        if strings.HasPrefix(k, "oauth_") {
+            authBuf.WriteString(fmt.Sprintf("%s=%q, ", k, v))
         }
-        i++
     }
 
-    request := httplib.Get(url)
-    request.Header("Authorization", authBuf.String())
-    request.Body("")
-    return request.AsResponse()
+    authBufString := authBuf.String()
+    if len(authBufString) > 0 {
+        authBufString = authBufString[0 : len(authBufString)-2]
+    }
+
+    streamClient := new(oauthStreamClient)
+    streamClient.url = url
+    streamClient.params = form
+    streamClient.headers = map[string]string{
+        "Authorization": authBufString,
+        "Content-Type":  "application/x-www-form-urlencoded",
+    }
+
+    //close the existing connection
+    if o.streamClient != nil {
+        o.streamClient.close()
+    }
+
+    resp, err := streamClient.connect()
+    if err != nil {
+        return err
+    }
+
+    //TODO: handle non-streaming methods here
+    go streamClient.readStream(resp)
+
+    o.streamClient = streamClient
+    streamClient.stream = o.Stream
+
+    return nil
+}
+
+func (o *OAuthClient) SiteStream(OAuthToken string, OAuthTokenSecret string, ids []int64) os.Error {
+    //build the follow string
+    var buf bytes.Buffer
+    for i, id := range ids {
+        buf.WriteString(strconv.Itoa64(id))
+        if i != len(ids)-1 {
+            buf.WriteString(",")
+        }
+    }
+    params := map[string]string{"follow": buf.String()}
+    return o.connect(siteStreamUrl.Raw, OAuthToken, OAuthTokenSecret, params)
+}
+
+
+// Close the client
+func (o *OAuthClient) Close() {
+    //has it already been closed?
+    if o.streamClient.closed {
+        return
+    }
+    o.streamClient.close()
 }
