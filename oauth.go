@@ -158,7 +158,11 @@ func (rt *RequestToken) AuthorizeUrl() string {
     return fmt.Sprintf("%s?oauth_token=%s", authorizeUrl.Raw, rt.OAuthToken)
 }
 
-func (o *OAuthClient) GetAccessToken(requestToken *RequestToken, OAuthVerifier string) *AccessToken {
+func (o *OAuthClient) GetAccessToken(requestToken *RequestToken, OAuthVerifier string) (*AccessToken, os.Error) {
+    if requestToken == nil || requestToken.OAuthToken == "" || requestToken.OAuthTokenSecret == "" {
+        return nil, os.NewError("Invalid Request token")
+    }
+    
     nonce := getNonce(40)
     params := map[string]string{
         "oauth_nonce":            nonce,
@@ -189,7 +193,7 @@ func (o *OAuthClient) GetAccessToken(requestToken *RequestToken, OAuthVerifier s
     resp, err := request.AsString()
     tokens, err := http.ParseQuery(resp)
     if err != nil {
-        println(err.String())
+        return nil, err
     }
 
     at := AccessToken{
@@ -198,7 +202,7 @@ func (o *OAuthClient) GetAccessToken(requestToken *RequestToken, OAuthVerifier s
         UserId:           tokens["user_id"][0],
         ScreenName:       tokens["screen_name"][0],
     }
-    return &at
+    return &at, nil
 
 }
 
