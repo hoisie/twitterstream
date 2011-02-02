@@ -25,7 +25,7 @@ var authorizeUrl, _ = http.ParseURL("https://api.twitter.com/oauth/authorize")
 type OAuthClient struct {
     ConsumerKey    string
     ConsumerSecret string
-    Stream         chan Tweet
+    Stream         chan *Tweet
     //the ccurrent connection to the stream client
     streamClient *oauthStreamClient
 }
@@ -36,14 +36,14 @@ type oauthStreamClient struct {
     params     map[string]string
     url        string
     closed     bool
-    stream     chan Tweet
+    stream     chan *Tweet
 }
 
 func NewOAuthClient(consumerKey string, consumerSecret string) *OAuthClient {
     return &OAuthClient{
         ConsumerKey:    consumerKey,
         ConsumerSecret: consumerSecret,
-        Stream:         make(chan Tweet),
+        Stream:         make(chan *Tweet),
     }
 }
 
@@ -162,7 +162,7 @@ func (o *OAuthClient) GetAccessToken(requestToken *RequestToken, OAuthVerifier s
     if requestToken == nil || requestToken.OAuthToken == "" || requestToken.OAuthTokenSecret == "" {
         return nil, os.NewError("Invalid Request token")
     }
-    
+
     nonce := getNonce(40)
     params := map[string]string{
         "oauth_nonce":            nonce,
@@ -221,7 +221,16 @@ func (c *oauthStreamClient) connect() (*http.Response, os.Error) {
     c.httpClient.Body(body.String())
 
     //make the new connection
-    return c.httpClient.AsResponse()
+    resp, err := c.httpClient.AsResponse()
+    if err != nil {
+        return resp, err
+    }
+
+    if !(resp.StatusCode >= 200 && resp.StatusCode <= 299) {
+        return nil, os.NewError(resp.Status)
+    }
+
+    return resp, nil
 }
 
 func (c *oauthStreamClient) readStream(resp *http.Response) {
@@ -233,7 +242,6 @@ func (c *oauthStreamClient) readStream(resp *http.Response) {
             c.httpClient.Close()
             break
         }
-
         line, err := reader.ReadBytes('\n')
         if err != nil {
             if c.closed {
@@ -258,11 +266,10 @@ func (c *oauthStreamClient) readStream(resp *http.Response) {
         if len(line) == 0 {
             continue
         }
-
         var message SiteStreamMessage
         json.Unmarshal(line, &message)
         if message.Message.Id != 0 {
-            c.stream <- message.Message
+            c.stream <- &message.Message
         }
     }
 }
@@ -291,6 +298,7 @@ func (o *OAuthClient) connect(url string, OAuthToken string, OAuthTokenSecret st
     }
 
     base := signatureBase("POST", url, params)
+
     signature := signRequest(base, o.ConsumerSecret, OAuthTokenSecret)
 
     params["oauth_signature"] = URLEscape(signature)

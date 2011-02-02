@@ -20,15 +20,14 @@ var sampleUrl, _ = http.ParseURL("http://stream.twitter.com/1/statuses/sample.js
 var userUrl, _ = http.ParseURL("http://userstream.twitter.com/2/user.json")
 var siteStreamUrl, _ = http.ParseURL("https://betastream.twitter.com/2b/site.json")
 
-
 var retryTimeout int64 = 5e9
 
 type streamConn struct {
     clientConn   *http.ClientConn
     url          *http.URL
-    stream       chan Tweet
-    eventStream  chan Event
-    friendStream chan FriendList
+    stream       chan *Tweet
+    eventStream  chan *Event
+    friendStream chan *FriendList
     authData     string
     postData     string
     stale        bool
@@ -124,16 +123,16 @@ func (conn *streamConn) readStream(resp *http.Response) {
         case bytes.HasPrefix(line, []byte(`{"event":`)):
             var event Event
             json.Unmarshal(line, &event)
-            conn.eventStream <- event
+            conn.eventStream <- &event
         case bytes.HasPrefix(line, []byte(`{"friends":`)):
             var friends FriendList
             json.Unmarshal(line, &friends)
-            conn.friendStream <- friends
+            conn.friendStream <- &friends
         default:
             var tweet Tweet
             json.Unmarshal(line, &tweet)
             if tweet.Id != 0 {
-                conn.stream <- tweet
+                conn.stream <- &tweet
             }
         }
     }
@@ -158,14 +157,17 @@ func (nopCloser) Close() os.Error { return nil }
 type Client struct {
     Username     string
     Password     string
-    Stream       chan Tweet
-    EventStream  chan Event
-    FriendStream chan FriendList
+    stream       chan *Tweet
+    eventStream  chan *Event
+    friendStream chan *FriendList
     conn         *streamConn
 }
 
 func NewClient(username, password string) *Client {
-    return &Client{username, password, make(chan Tweet), make(chan Event), make(chan FriendList), nil}
+    return &Client{
+        Username: username,
+        Password: password,
+    }
 }
 
 func (c *Client) connect(url *http.URL, body string) (err os.Error) {
@@ -197,9 +199,9 @@ func (c *Client) connect(url *http.URL, body string) (err os.Error) {
     }
 
     c.conn = &sc
-    sc.stream = c.Stream
-    sc.eventStream = c.EventStream
-    sc.friendStream = c.FriendStream
+    sc.stream = c.stream
+    sc.eventStream = c.eventStream
+    sc.friendStream = c.friendStream
     go sc.readStream(resp)
 
 Return:
@@ -207,8 +209,8 @@ Return:
 }
 
 // Follow a list of user ids
-func (c *Client) Follow(ids []int64) os.Error {
-
+func (c *Client) Follow(ids []int64, stream chan *Tweet) os.Error {
+    c.stream = stream
     var body bytes.Buffer
     body.WriteString("follow=")
     for i, id := range ids {
@@ -221,8 +223,8 @@ func (c *Client) Follow(ids []int64) os.Error {
 }
 
 // Track a list of topics
-func (c *Client) Track(topics []string) os.Error {
-
+func (c *Client) Track(topics []string, stream chan *Tweet) os.Error {
+    c.stream = stream
     var body bytes.Buffer
     body.WriteString("track=")
     for i, topic := range topics {
@@ -235,10 +237,15 @@ func (c *Client) Track(topics []string) os.Error {
 }
 
 // Filter a list of user ids
-func (c *Client) Sample() os.Error { return c.connect(sampleUrl, "") }
+func (c *Client) Sample(stream chan *Tweet) os.Error {
+    c.stream = stream
+    return c.connect(sampleUrl, "")
+}
 
 // Track User tweets and events
-func (c *Client) User() os.Error {
+func (c *Client) User(eventStream chan *Event, friendStream chan *FriendList) os.Error {
+    c.eventStream = eventStream
+    c.friendStream = friendStream
     return c.connect(userUrl, "")
 }
 
