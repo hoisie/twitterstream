@@ -121,18 +121,24 @@ func (conn *streamConn) readStream(resp *http.Response) {
         }
         switch {
         case bytes.HasPrefix(line, []byte(`{"event":`)):
-            var event Event
-            json.Unmarshal(line, &event)
-            conn.eventStream <- &event
+            if conn.eventStream != nil {
+                var event Event
+                json.Unmarshal(line, &event)
+                conn.eventStream <- &event
+            }
         case bytes.HasPrefix(line, []byte(`{"friends":`)):
-            var friends FriendList
-            json.Unmarshal(line, &friends)
-            conn.friendStream <- &friends
+            if conn.friendStream != nil {
+                var friends FriendList
+                json.Unmarshal(line, &friends)
+                conn.friendStream <- &friends
+            }
         default:
-            var tweet Tweet
-            json.Unmarshal(line, &tweet)
-            if tweet.Id != 0 {
-                conn.stream <- &tweet
+            if conn.stream != nil {
+                var tweet Tweet
+                json.Unmarshal(line, &tweet)
+                if tweet.Id != 0 {
+                    conn.stream <- &tweet
+                }
             }
         }
     }
@@ -243,7 +249,8 @@ func (c *Client) Sample(stream chan *Tweet) os.Error {
 }
 
 // Track User tweets and events
-func (c *Client) User(eventStream chan *Event, friendStream chan *FriendList) os.Error {
+func (c *Client) User(stream chan *Tweet, eventStream chan *Event, friendStream chan *FriendList) os.Error {
+    c.stream = stream
     c.eventStream = eventStream
     c.friendStream = friendStream
     return c.connect(userUrl, "")
