@@ -46,9 +46,9 @@ func (conn *streamConn) connect() (*http.Response, os.Error) {
     var err os.Error
     if proxy := os.Getenv("HTTP_PROXY"); len(proxy) > 0 {
         proxy_url, _ := http.ParseURL(proxy)
-        tcpConn, err = net.Dial("tcp", "", proxy_url.Host)
+        tcpConn, err = net.Dial("tcp", proxy_url.Host)
     } else {
-        tcpConn, err = net.Dial("tcp", "", conn.url.Host+":80")
+        tcpConn, err = net.Dial("tcp", conn.url.Host+":80")
     }
     if err != nil {
         return nil, err
@@ -58,22 +58,17 @@ func (conn *streamConn) connect() (*http.Response, os.Error) {
     var req http.Request
     req.URL = conn.url
     req.Method = "GET"
-    req.Header = map[string]string{}
-    req.Header["Authorization"] = "Basic " + conn.authData
+    req.Header = http.Header{}
+    req.Header.Set("Authorization", "Basic "+conn.authData)
 
     if conn.postData != "" {
         req.Method = "POST"
         req.Body = nopCloser{bytes.NewBufferString(conn.postData)}
         req.ContentLength = int64(len(conn.postData))
-        req.Header["Content-Type"] = "application/x-www-form-urlencoded"
+        req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
     }
 
-    err = conn.clientConn.Write(&req)
-    if err != nil {
-        return nil, err
-    }
-
-    resp, err := conn.clientConn.Read()
+    resp, err := conn.clientConn.Do(&req)
     if err != nil {
         return nil, err
     }
@@ -88,11 +83,7 @@ func (conn *streamConn) readStream(resp *http.Response) {
     for {
         //we've been closed
         if conn.stale {
-            tcpConn, _ := conn.clientConn.Close()
-            if tcpConn != nil {
-                tcpConn.Close()
-            }
-            break
+            conn.clientConn.Close()
         }
 
         line, err := reader.ReadBytes('\n')
@@ -184,7 +175,6 @@ func (c *Client) connect(url *http.URL, body string) (err os.Error) {
     var resp *http.Response
     //initialize the new stream
     var sc streamConn
-
     sc.authData = encodedAuth(c.Username, c.Password)
     sc.postData = body
     sc.url = url
