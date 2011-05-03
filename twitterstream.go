@@ -90,7 +90,7 @@ func (conn *streamConn) readStream(resp *http.Response) {
         line, err := reader.ReadBytes('\n')
         if err != nil {
             if conn.stale {
-                break
+                continue
             }
 
             //try reconnecting
