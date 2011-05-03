@@ -84,21 +84,24 @@ func (conn *streamConn) readStream(resp *http.Response) {
         //we've been closed
         if conn.stale {
             conn.clientConn.Close()
+            break
         }
 
         line, err := reader.ReadBytes('\n')
         if err != nil {
             if conn.stale {
-                continue
+                break
             }
+
+            //try reconnecting
             resp, err := conn.connect()
             if err != nil {
                 println(err.String())
                 time.Sleep(retryTimeout)
                 continue
             }
-
             if resp.StatusCode != 200 {
+                time.Sleep(retryTimeout)
                 continue
             }
 
