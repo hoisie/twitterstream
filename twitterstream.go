@@ -252,7 +252,7 @@ func (c *Client) User(stream chan *Tweet, eventStream chan *Event, friendStream 
 // Close the client
 func (c *Client) Close() {
     //has it already been closed?
-    if c.conn.stale {
+    if c.conn == nil || c.conn.stale {
         return
     }
     c.conn.Close()
