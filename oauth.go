@@ -16,11 +16,12 @@ import (
     "strings"
     "strconv"
     "time"
+    "url"
 )
 
-var requestTokenUrl, _ = http.ParseURL("https://api.twitter.com/oauth/request_token")
-var accessTokenUrl, _ = http.ParseURL("https://api.twitter.com/oauth/access_token")
-var authorizeUrl, _ = http.ParseURL("https://api.twitter.com/oauth/authorize")
+var requestTokenUrl, _ = url.Parse("https://api.twitter.com/oauth/request_token")
+var accessTokenUrl, _ = url.Parse("https://api.twitter.com/oauth/access_token")
+var authorizeUrl, _ = url.Parse("https://api.twitter.com/oauth/authorize")
 
 type OAuthClient struct {
     ConsumerKey    string
@@ -82,7 +83,7 @@ func signatureBase(httpMethod string, base_uri string, params map[string]string)
         keys.Push(k)
     }
 
-    sort.SortStrings(keys)
+    sort.Strings(keys)
     for i, k := range keys {
         v := params[k]
         buf.WriteString(URLEscape(k))
@@ -140,7 +141,7 @@ func (o *OAuthClient) GetRequestToken(callback string) *RequestToken {
     request.Header("Authorization", authBuf.String())
     request.Body("")
     resp, err := request.AsString()
-    tokens, err := http.ParseQuery(resp)
+    tokens, err := url.ParseQuery(resp)
     if err != nil {
         println(err.String())
     }
@@ -191,7 +192,7 @@ func (o *OAuthClient) GetAccessToken(requestToken *RequestToken, OAuthVerifier s
     request.Header("Authorization", authBuf.String())
     request.Body("")
     resp, err := request.AsString()
-    tokens, err := http.ParseQuery(resp)
+    tokens, err := url.ParseQuery(resp)
     if err != nil {
         return nil, err
     }
@@ -280,7 +281,7 @@ func (c *oauthStreamClient) close() {
 
 }
 
-func (o *OAuthClient) connect(url string, OAuthToken string, OAuthTokenSecret string, form map[string]string) os.Error {
+func (o *OAuthClient) connect(url_ string, OAuthToken string, OAuthTokenSecret string, form map[string]string) os.Error {
     nonce := getNonce(40)
 
     params := map[string]string{
@@ -297,7 +298,7 @@ func (o *OAuthClient) connect(url string, OAuthToken string, OAuthTokenSecret st
         params[URLEscape(k)] = URLEscape(v)
     }
 
-    base := signatureBase("POST", url, params)
+    base := signatureBase("POST", url_, params)
 
     signature := signRequest(base, o.ConsumerSecret, OAuthTokenSecret)
 
@@ -316,7 +317,7 @@ func (o *OAuthClient) connect(url string, OAuthToken string, OAuthTokenSecret st
     }
 
     streamClient := new(oauthStreamClient)
-    streamClient.url = url
+    streamClient.url = url_
     streamClient.params = form
     streamClient.headers = map[string]string{
         "Authorization": authBufString,
@@ -354,7 +355,6 @@ func (o *OAuthClient) SiteStream(OAuthToken string, OAuthTokenSecret string, ids
     params := map[string]string{"follow": buf.String()}
     return o.connect(siteStreamUrl.Raw, OAuthToken, OAuthTokenSecret, params)
 }
-
 
 // Close the client
 func (o *OAuthClient) Close() {

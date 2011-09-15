@@ -11,20 +11,20 @@ import (
     "net"
     "strconv"
     "time"
+    "url"
 )
 
-
-var followUrl, _ = http.ParseURL("https://stream.twitter.com/1/statuses/filter.json")
-var trackUrl, _ = http.ParseURL("http://stream.twitter.com/1/statuses/filter.json")
-var sampleUrl, _ = http.ParseURL("http://stream.twitter.com/1/statuses/sample.json")
-var userUrl, _ = http.ParseURL("http://userstream.twitter.com/2/user.json")
-var siteStreamUrl, _ = http.ParseURL("https://betastream.twitter.com/2b/site.json")
+var followUrl, _ = url.Parse("https://stream.twitter.com/1/statuses/filter.json")
+var trackUrl, _ = url.Parse("http://stream.twitter.com/1/statuses/filter.json")
+var sampleUrl, _ = url.Parse("http://stream.twitter.com/1/statuses/sample.json")
+var userUrl, _ = url.Parse("http://userstream.twitter.com/2/user.json")
+var siteStreamUrl, _ = url.Parse("https://betastream.twitter.com/2b/site.json")
 
 var retryTimeout int64 = 5e9
 
 type streamConn struct {
     clientConn   *http.ClientConn
-    url          *http.URL
+    url          *url.URL
     stream       chan *Tweet
     eventStream  chan *Event
     friendStream chan *FriendList
@@ -45,7 +45,7 @@ func (conn *streamConn) connect() (*http.Response, os.Error) {
     var tcpConn net.Conn
     var err os.Error
     if proxy := os.Getenv("HTTP_PROXY"); len(proxy) > 0 {
-        proxy_url, _ := http.ParseURL(proxy)
+        proxy_url, _ := url.Parse(proxy)
         tcpConn, err = net.Dial("tcp", proxy_url.Host)
     } else {
         tcpConn, err = net.Dial("tcp", conn.url.Host+":80")
@@ -138,7 +138,6 @@ func (conn *streamConn) readStream(resp *http.Response) {
     }
 }
 
-
 func encodedAuth(user, pwd string) string {
     var buf bytes.Buffer
     encoder := base64.NewEncoder(base64.StdEncoding, &buf)
@@ -152,7 +151,6 @@ type nopCloser struct {
 }
 
 func (nopCloser) Close() os.Error { return nil }
-
 
 type Client struct {
     Username     string
@@ -170,7 +168,7 @@ func NewClient(username, password string) *Client {
     }
 }
 
-func (c *Client) connect(url *http.URL, body string) (err os.Error) {
+func (c *Client) connect(url_ *url.URL, body string) (err os.Error) {
     if c.Username == "" || c.Password == "" {
         return os.NewError("The username or password is invalid")
     }
@@ -180,7 +178,7 @@ func (c *Client) connect(url *http.URL, body string) (err os.Error) {
     var sc streamConn
     sc.authData = encodedAuth(c.Username, c.Password)
     sc.postData = body
-    sc.url = url
+    sc.url = url_
     resp, err = sc.connect()
     if err != nil {
         goto Return
@@ -188,7 +186,7 @@ func (c *Client) connect(url *http.URL, body string) (err os.Error) {
 
     if resp.StatusCode != 200 {
         err = os.NewError("Twitterstream HTTP Error: " + resp.Status +
-            "\n" + url.Path)
+            "\n" + url_.Path)
         goto Return
     }
 
