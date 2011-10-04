@@ -3,6 +3,8 @@ package twitterstream
 import (
     "bufio"
     "bytes"
+    "crypto/rand"
+    "crypto/tls"
     "encoding/base64"
     "http"
     "io"
@@ -48,12 +50,15 @@ func (conn *streamConn) connect() (*http.Response, os.Error) {
         proxy_url, _ := url.Parse(proxy)
         tcpConn, err = net.Dial("tcp", proxy_url.Host)
     } else {
-        tcpConn, err = net.Dial("tcp", conn.url.Host+":80")
+        tcpConn, err = net.Dial("tcp", conn.url.Host+":443")
     }
     if err != nil {
         return nil, err
     }
-    conn.clientConn = http.NewClientConn(tcpConn, nil)
+    cf := &tls.Config{Rand: rand.Reader, Time: time.Nanoseconds}
+    ssl := tls.Client(tcpConn, cf)
+
+    conn.clientConn = http.NewClientConn(ssl, nil)
 
     var req http.Request
     req.URL = conn.url
