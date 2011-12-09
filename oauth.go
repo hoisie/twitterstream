@@ -3,20 +3,20 @@ package twitterstream
 import (
     "bufio"
     "bytes"
-    "container/vector"
     "crypto/hmac"
     "encoding/base64"
+    "encoding/json"
+    "errors"
     "fmt"
-    "http"
     "httplib"
-    "json"
-    "os"
-    "rand"
+    "log"
+    "math/rand"
+    "net/http"
+    "net/url"
     "sort"
     "strings"
     "strconv"
     "time"
-    "url"
 )
 
 var requestTokenUrl, _ = url.Parse("https://api.twitter.com/oauth/request_token")
@@ -78,12 +78,14 @@ func signatureBase(httpMethod string, base_uri string, params map[string]string)
     buf.WriteString(URLEscape(base_uri))
     buf.WriteString("&")
 
-    var keys vector.StringVector
+    keys := make([]string,0)
+
     for k, _ := range params {
-        keys.Push(k)
+        keys = append(keys, k)
     }
 
     sort.Strings(keys)
+
     for i, k := range keys {
         v := params[k]
         buf.WriteString(URLEscape(k))
@@ -104,8 +106,7 @@ func signRequest(base string, consumerSecret string, tokenSecret string) string 
         signingKey += URLEscape(tokenSecret)
     }
     hash := hmac.NewSHA1([]byte(signingKey))
-    hash.Write([]byte(base))
-    sum := hash.Sum()
+    sum := hash.Sum([]byte(base))
     bb := new(bytes.Buffer)
     encoder := base64.NewEncoder(base64.StdEncoding, bb)
     encoder.Write(sum)
@@ -119,7 +120,7 @@ func (o *OAuthClient) GetRequestToken(callback string) *RequestToken {
         "oauth_nonce":            nonce,
         "oauth_callback":         URLEscape(callback),
         "oauth_signature_method": "HMAC-SHA1",
-        "oauth_timestamp":        strconv.Itoa64(time.Seconds()),
+        "oauth_timestamp":        strconv.FormatInt(int64(time.Now().Second()), 10),
         "oauth_consumer_key":     o.ConsumerKey,
         "oauth_version":          "1.0",
     }
@@ -143,10 +144,10 @@ func (o *OAuthClient) GetRequestToken(callback string) *RequestToken {
     resp, err := request.AsString()
     tokens, err := url.ParseQuery(resp)
     if err != nil {
-        println(err.String())
+        println(err.Error())
     }
 
-    confirmed, _ := strconv.Atob(tokens["oauth_callback_confirmed"][0])
+    confirmed, _ := strconv.ParseBool(tokens["oauth_callback_confirmed"][0])
     rt := RequestToken{
         OAuthTokenSecret:       tokens["oauth_token_secret"][0],
         OAuthToken:             tokens["oauth_token"][0],
@@ -159,9 +160,9 @@ func (rt *RequestToken) AuthorizeUrl() string {
     return fmt.Sprintf("%s?oauth_token=%s", authorizeUrl.Raw, rt.OAuthToken)
 }
 
-func (o *OAuthClient) GetAccessToken(requestToken *RequestToken, OAuthVerifier string) (*AccessToken, os.Error) {
+func (o *OAuthClient) GetAccessToken(requestToken *RequestToken, OAuthVerifier string) (*AccessToken, error) {
     if requestToken == nil || requestToken.OAuthToken == "" || requestToken.OAuthTokenSecret == "" {
-        return nil, os.NewError("Invalid Request token")
+        return nil, errors.New("Invalid Request token")
     }
 
     nonce := getNonce(40)
@@ -170,7 +171,7 @@ func (o *OAuthClient) GetAccessToken(requestToken *RequestToken, OAuthVerifier s
         "oauth_token":            requestToken.OAuthToken,
         "oauth_verifier":         OAuthVerifier,
         "oauth_signature_method": "HMAC-SHA1",
-        "oauth_timestamp":        strconv.Itoa64(time.Seconds()),
+        "oauth_timestamp":        strconv.FormatInt(int64(time.Now().Second()), 10),
         "oauth_consumer_key":     o.ConsumerKey,
         "oauth_version":          "1.0",
     }
@@ -207,7 +208,7 @@ func (o *OAuthClient) GetAccessToken(requestToken *RequestToken, OAuthVerifier s
 
 }
 
-func (c *oauthStreamClient) connect() (*http.Response, os.Error) {
+func (c *oauthStreamClient) connect() (*http.Response, error) {
     c.httpClient = httplib.Post(c.url)
     for k, v := range c.headers {
         c.httpClient.Header(k, v)
@@ -228,7 +229,7 @@ func (c *oauthStreamClient) connect() (*http.Response, os.Error) {
     }
 
     if !(resp.StatusCode >= 200 && resp.StatusCode <= 299) {
-        return nil, os.NewError(resp.Status)
+        return nil, errors.New(resp.Status)
     }
 
     return resp, nil
@@ -250,7 +251,7 @@ func (c *oauthStreamClient) readStream(resp *http.Response) {
             }
             resp, err := c.connect()
             if err != nil {
-                println(err.String())
+                log.Print(err.Error())
                 time.Sleep(retryTimeout)
                 continue
             }
@@ -281,14 +282,14 @@ func (c *oauthStreamClient) close() {
 
 }
 
-func (o *OAuthClient) connect(url_ string, OAuthToken string, OAuthTokenSecret string, form map[string]string) os.Error {
+func (o *OAuthClient) connect(url_ string, OAuthToken string, OAuthTokenSecret string, form map[string]string) error {
     nonce := getNonce(40)
 
     params := map[string]string{
         "oauth_nonce":            nonce,
         "oauth_token":            OAuthToken,
         "oauth_signature_method": "HMAC-SHA1",
-        "oauth_timestamp":        strconv.Itoa64(time.Seconds()),
+        "oauth_timestamp":        strconv.FormatInt(int64(time.Now().Second()), 10),
         "oauth_consumer_key":     o.ConsumerKey,
         "oauth_version":          "1.0",
     }
@@ -343,11 +344,11 @@ func (o *OAuthClient) connect(url_ string, OAuthToken string, OAuthTokenSecret s
     return nil
 }
 
-func (o *OAuthClient) SiteStream(OAuthToken string, OAuthTokenSecret string, ids []int64) os.Error {
+func (o *OAuthClient) SiteStream(OAuthToken string, OAuthTokenSecret string, ids []int64) error {
     //build the follow string
     var buf bytes.Buffer
     for i, id := range ids {
-        buf.WriteString(strconv.Itoa64(id))
+        buf.WriteString(strconv.FormatInt(id, 10))
         if i != len(ids)-1 {
             buf.WriteString(",")
         }
