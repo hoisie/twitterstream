@@ -1,0 +1,6 @@
+To run examples:
+	
+	go run jsonmarshall.go
+
+	go run simple.go -user=myusername -pwd=mypwd
+	
