@@ -5,9 +5,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"errors"
-	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -30,7 +28,7 @@ type streamConn struct {
 	stale    bool
 }
 
-type StreamHandler func([]byte)
+//type StreamHandler func([]byte)
 
 func (conn *streamConn) Close() {
 	// Just mark the connection as stale, and let the connect() handler close after a read
@@ -41,29 +39,8 @@ func (conn *streamConn) connect() (*http.Response, error) {
 	if conn.stale {
 		return nil, errors.New("Stale connection")
 	}
-	/*
-	   var tcpConn net.Conn
-	   var err error
-	   if proxy := os.Getenv("HTTP_PROXY"); len(proxy) > 0 {
-	       proxy_url, _ := url.Parse(proxy)
-	       tcpConn, err = net.Dial("tcp", proxy_url.Host)
-	   } else {
-	       tcpConn, err = net.Dial("tcp", conn.url.Host+":443")
-	   }
-	   if err != nil {
-	       return nil, err
-	   }
-	*/
-	//cf := &tls.Config{Rand: rand.Reader, Time: time.Now}
 
-	//ssl := tls.Client(tcpConn, cf)
-
-	//transport := http.Transport{TLSClientConfig:cf}
-	//conn.client = ssl
-	//&http.Client{Transport:&transport}
-	//conn.client = &http.Client{Transport:&transport}
 	conn.client = &http.Client{}
-	fmt.Printf("%v \n", *conn.client)
 
 	var req http.Request
 	req.URL = conn.url
@@ -77,55 +54,38 @@ func (conn *streamConn) connect() (*http.Response, error) {
 		req.ContentLength = int64(len(conn.postData))
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	}
-	log.Print("made it to about to conn.Client.Do")
+	
 	resp, err := conn.client.Do(&req)
-	println("status = ", resp.Status)
+	Debugf("connected to %s \n\thttp status = %d", conn.url, resp.Status)
 	for n, v := range resp.Header {
-		println(n, v[0])
+		Debug(n, v[0])
 	}
 
 	if err != nil {
-		log.Print(err)
+		Log(ERROR, "Could not Connect to Stream: ", err)
 		return nil, err
 	}
 
 	return resp, nil
 }
 
-func (conn *streamConn) readStream(resp *http.Response, handler StreamHandler, uniqueId string) {
+func (conn *streamConn) readStream(resp *http.Response, handler func([]byte), uniqueId string) {
 
 	var reader *bufio.Reader
 	reader = bufio.NewReader(resp.Body)
-
-	/*
-	   // lets poll back to see if this conn is closed?
-	   timer := time.NewTicker(time.Second * 5)
-
-
-	   go func() {
-	       for _ = range timer.C {
-	           println("status = ", resp.Status)
-	           if conn.stale {
-	               println("Conn is Stale? ")
-	               close(conn.stream)
-	               conn.Close() 
-	           }
-	       }
-	   }()
-	*/
 
 	for {
 		//we've been closed
 		if conn.stale {
 			conn.Close()
-			println("Closing connection?")
+			Debug("Connection closed, shutting down ")
 			//conn.Transport.CloseIdleConnections()
 			break
 		}
 
 		line, err := reader.ReadBytes('\n')
 		if err != nil {
-			println("trying to reconnect? in error")
+			Debug("trying to reconnect? in error")
 			if conn.stale {
 				continue
 			}
@@ -133,7 +93,7 @@ func (conn *streamConn) readStream(resp *http.Response, handler StreamHandler, u
 			//try reconnecting
 			resp, err := conn.connect()
 			if err != nil {
-				println(err.Error())
+				Log(ERROR, " Could not reconnect to source? sleeping and will retry ", err.Error())
 				time.Sleep(retryTimeout)
 				continue
 			}
@@ -147,13 +107,15 @@ func (conn *streamConn) readStream(resp *http.Response, handler StreamHandler, u
 		}
 		line = bytes.TrimSpace(line)
 
-		//println("In twstream", string(line))
-
 		if len(line) == 0 {
 			continue
 		}
+		// should we look for twitter stall_warnings and then continue?
+		// https://dev.twitter.com/docs/streaming-api/methods
+
 		// keep some metrics, to support re-balancing
-		incrCounter(uniqueId)
+		IncrCounter(uniqueId)
+
 		handler(line)
 	}
 }
@@ -183,7 +145,7 @@ type Client struct {
 	Handler func([]byte)
 }
 
-func NewClient(username, password string, handler StreamHandler) *Client {
+func NewClient(username, password string, handler func([]byte)) *Client {
 	return &Client{
 		Username: username,
 		Password: password,
@@ -202,15 +164,13 @@ func (c *Client) connect(url_ *url.URL, body string) (err error) {
 	sc.authData = encodedAuth(c.Username, c.Password)
 	sc.postData = body
 	sc.url = url_
-	log.Print("about to call sc.connect")
 	resp, err = sc.connect()
 	if err != nil {
 		goto Return
 	}
 
 	if resp.StatusCode != 200 {
-		err = errors.New("Twitterstream HTTP Error: " + resp.Status +
-			"\n" + url_.Path)
+		err = errors.New("Twitterstream HTTP Error: " + resp.Status + "\n" + url_.Path)
 		goto Return
 	}
 
@@ -236,11 +196,11 @@ func (c *Client) Follow(ids []int64) error {
 			body.WriteString(",")
 		}
 	}
-	log.Print(followUrl, " body = ", body.String())
+	Debug("TWFOLLOW ", followUrl, body.String())
 	return c.connect(followUrl, body.String())
 }
 
-// Track a list of topics
+// Twitter Track a list of topics
 func (c *Client) Track(topics []string) error {
 	var body bytes.Buffer
 	body.WriteString("track=")
@@ -250,11 +210,11 @@ func (c *Client) Track(topics []string) error {
 			body.WriteString(",")
 		}
 	}
-	log.Print("TURL ", trackUrl, " body = ", body.String())
+	Debug("TWTRACK ", trackUrl, " body = ", body.String())
 	return c.connect(trackUrl, body.String())
 }
 
-// get sample stream
+// twitter sample stream
 func (c *Client) Sample() error {
 	return c.connect(sampleUrl, "")
 }

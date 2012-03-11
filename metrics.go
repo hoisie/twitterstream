@@ -16,28 +16,28 @@ func init() {
 
 // get this metrics counters for the last 10 tests
 func MetricsHistory() []map[string]uint64 {
-	// hopefully this returns a copy?
+	// hopefully this returns a copy? not ref?
 	return counterHistory
 }
 
 
-func incrCounter(name string) {
-	updateCounter(name, 1)
+func IncrCounter(name string) {
+	UpdateCounter(name, 1)
 }
 
-func updateGauge(name string, value float64) {
+func UpdateGauge(name string, value float64) {
 	counterMu.Lock()
 	streamGauges[name] += value
 	counterMu.Unlock()
 }
 
-func updateCounter(name string, value uint64) {
+func UpdateCounter(name string, value uint64) {
 	counterMu.Lock()
 	streamCounters[name] += value
 	counterMu.Unlock()
 }
 
-// gets metrics, and replaces with new zeros, keep a history of last 10 samples
+// gets metrics, and replaces with new zeroed counter, keep a history of last 10 samples
 // so we can calculate throughput rolling avgs
 func MetricsSnapshot() (counters map[string]uint64, gauges map[string]float64) {
 	counterMu.Lock()
@@ -53,6 +53,7 @@ func MetricsSnapshot() (counters map[string]uint64, gauges map[string]float64) {
 	return
 }
 
+// this starts a ticket (60 seconds) to get snapshots of metrics
 func RunMetricsHeartbeat() {
 
 	// lets poll back to take metrics snapshots
