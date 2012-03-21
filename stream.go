@@ -1,3 +1,11 @@
+/*
+A Go http streaming client. http-streaming is most-associated with the twitter stream api.  
+This client works with twitter, but has also been tested against the data-sift stream 
+as well as a stream-server I use internally (mongrel2)
+
+httpstream was forked from https://github.com/hoisie/twitterstream
+
+*/
 package httpstream
 
 import (
@@ -18,14 +26,19 @@ var sampleUrl, _ = url.Parse("https://stream.twitter.com/1/statuses/sample.json"
 var userUrl, _ = url.Parse("https://userstream.twitter.com/2/user.json")
 var siteStreamUrl, _ = url.Parse("https://sitestream.twitter.com/2b/site.json")
 
-var retryTimeout time.Duration = 5e9
-
+var retryTimeout time.Duration = time.Second * 10
 type streamConn struct {
 	client   *http.Client
 	url      *url.URL
 	authData string
 	postData string
 	stale    bool
+	wait     int
+	maxWait  int
+}
+
+func NewStreamConn() streamConn {
+	return streamConn{wait:1,maxWait:300}
 }
 
 //type StreamHandler func([]byte)
@@ -46,7 +59,10 @@ func (conn *streamConn) connect() (*http.Response, error) {
 	req.URL = conn.url
 	req.Method = "GET"
 	req.Header = http.Header{}
-	req.Header.Set("Authorization", "Basic "+conn.authData)
+	if conn.authData != "" {
+		req.Header.Set("Authorization", "Basic "+conn.authData)
+	}
+	
 
 	if conn.postData != "" {
 		req.Method = "POST"
@@ -56,14 +72,16 @@ func (conn *streamConn) connect() (*http.Response, error) {
 	}
 	
 	resp, err := conn.client.Do(&req)
-	Debugf("connected to %s \n\thttp status = %d", conn.url, resp.Status)
-	for n, v := range resp.Header {
-		Debug(n, v[0])
-	}
 
 	if err != nil {
 		Log(ERROR, "Could not Connect to Stream: ", err)
 		return nil, err
+	} else {
+		Debugf("connected to %s \n\thttp status = %v", conn.url, resp.Status)
+		Debug(resp.Header)
+		for n, v := range resp.Header {
+			Debug(n, v[0])
+		}
 	}
 
 	return resp, nil
@@ -74,6 +92,7 @@ func (conn *streamConn) readStream(resp *http.Response, handler func([]byte), un
 	var reader *bufio.Reader
 	reader = bufio.NewReader(resp.Body)
 
+	
 	for {
 		//we've been closed
 		if conn.stale {
@@ -85,25 +104,31 @@ func (conn *streamConn) readStream(resp *http.Response, handler func([]byte), un
 
 		line, err := reader.ReadBytes('\n')
 		if err != nil {
-			Debug("trying to reconnect? in error")
 			if conn.stale {
+				Debug("conn stale, continue")
 				continue
 			}
-
+			time.Sleep(time.Second * time.Duration(conn.wait))
 			//try reconnecting
 			resp, err := conn.connect()
 			if err != nil {
 				Log(ERROR, " Could not reconnect to source? sleeping and will retry ", err.Error())
-				time.Sleep(retryTimeout)
+				if conn.wait < conn.maxWait {
+					conn.wait = conn.wait * 2
+				}
 				continue
 			}
 			if resp.StatusCode != 200 {
-				time.Sleep(retryTimeout)
+				if conn.wait < conn.maxWait {
+					conn.wait = conn.wait * 2
+				}
 				continue
 			}
 
 			reader = bufio.NewReader(resp.Body)
 			continue
+		} else if conn.wait != 1 {
+			conn.wait =  1
 		}
 		line = bytes.TrimSpace(line)
 
@@ -113,9 +138,7 @@ func (conn *streamConn) readStream(resp *http.Response, handler func([]byte), un
 		// should we look for twitter stall_warnings and then continue?
 		// https://dev.twitter.com/docs/streaming-api/methods
 
-		// keep some metrics, to support re-balancing
-		IncrCounter(uniqueId)
-
+		// TODO:  look for status, stall warnings, etc
 		handler(line)
 	}
 }
@@ -145,7 +168,7 @@ type Client struct {
 	Handler func([]byte)
 }
 
-func NewClient(username, password string, handler func([]byte)) *Client {
+func NewBasicAuthClient(username, password string, handler func([]byte)) *Client {
 	return &Client{
 		Username: username,
 		Password: password,
@@ -153,24 +176,28 @@ func NewClient(username, password string, handler func([]byte)) *Client {
 	}
 }
 
-func (c *Client) connect(url_ *url.URL, body string) (err error) {
-	if c.Username == "" || c.Password == "" {
-		return errors.New("The username or password is invalid")
-	}
+
+func (c *Client) Connect(url_ *url.URL, body string) (err error) {
 
 	var resp *http.Response
-	//initialize the new stream
-	var sc streamConn
-	sc.authData = encodedAuth(c.Username, c.Password)
+	sc := NewStreamConn()
+
+	// if http basic auth
+	if c.Username != "" && c.Password != "" {
+		sc.authData = encodedAuth(c.Username, c.Password)
+	}
+
 	sc.postData = body
 	sc.url = url_
 	resp, err = sc.connect()
 	if err != nil {
+		Log(ERROR," errror ", err)
 		goto Return
 	}
 
 	if resp.StatusCode != 200 {
-		err = errors.New("Twitterstream HTTP Error: " + resp.Status + "\n" + url_.Path)
+		Debug("not http 200")
+		err = errors.New("stream HTTP Error: " + resp.Status + "\n" + url_.Path)
 		goto Return
 	}
 
@@ -180,9 +207,12 @@ func (c *Client) connect(url_ *url.URL, body string) (err error) {
 	}
 
 	c.conn = &sc
+	
 	go sc.readStream(resp, c.Handler, c.Uniqueid)
 
+	return
 Return:
+	Log(ERROR,"exiting ")
 	return
 }
 
@@ -197,7 +227,7 @@ func (c *Client) Follow(ids []int64) error {
 		}
 	}
 	Debug("TWFOLLOW ", followUrl, body.String())
-	return c.connect(followUrl, body.String())
+	return c.Connect(followUrl, body.String())
 }
 
 // Twitter Track a list of topics
@@ -211,17 +241,17 @@ func (c *Client) Track(topics []string) error {
 		}
 	}
 	Debug("TWTRACK ", trackUrl, " body = ", body.String())
-	return c.connect(trackUrl, body.String())
+	return c.Connect(trackUrl, body.String())
 }
 
 // twitter sample stream
 func (c *Client) Sample() error {
-	return c.connect(sampleUrl, "")
+	return c.Connect(sampleUrl, "")
 }
 
 // Track User tweets and events, uses passed username/pwd
 func (c *Client) User() error {
-	return c.connect(userUrl, "")
+	return c.Connect(userUrl, "")
 }
 
 // Close the client

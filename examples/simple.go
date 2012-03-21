@@ -3,34 +3,52 @@ package main
 import (
 	"flag"
 	"github.com/araddon/httpstream"
+	"log"
+	"os"
 )
 
 var pwd *string = flag.String("pwd", "password", "Password")
 var user *string = flag.String("user", "username", "username")
 var track *string = flag.String("track", "", "Twitter terms to track")
+var logLevel *string = flag.String("logging", "debug", "Which log level: [debug,info,warn,error,fatal]")
+
 
 func main() {
 
 	flag.Parse()
-	stream := make(chan []byte)
-	//stream := make(chan []byte,1000) make a buffered queue channel instead of a blocking one
+	httpstream.SetLogger(log.New(os.Stdout, "", log.Ldate|log.Ltime|log.Lshortfile), *logLevel)
+	ct := 0
 
-	// the stream listener effectively operates in one "thread"
-	client := httpstream.NewClient(*user, *pwd, func(line []byte) {
+	// make a go channel for sending from listener to processor
+	// we buffer it, to help ensure we aren't backing up twitter or else they cut us off
+	stream := make(chan []byte,1000) 
+
+	// the stream listener effectively operates in one "thread"/goroutine
+	// as the httpstream Client processes inside a go routine it opens
+	// That includes the handler func we pass in here
+	client := httpstream.NewBasicAuthClient(*user, *pwd, func(line []byte) {
 		stream <- line
+		// although you can do heavy lifting here, it means you are doing all
+		// your work in the same thread as the http streaming/listener
+		// by using a go channel, you can send the work to a 
+		// different thread/goroutine
 	})
-	//err := client.Track([]string{"bieber,iphone,mac,android,ios,lady gaga,dancing,sick,game,when,why,where,how,who"}, stream)
+
+	//err := client.Track([]string{"eat,iphone,mac,android,ios,burger"}, stream)
 	err := client.Sample()
 	if err != nil {
-		println(err.Error())
+		httpstream.Log(ERROR, (err.Error())
 	} else {
 
-		// while this operates in a different "thread(s)" (if more than one proc)
-		for {
-			tw := <-stream
+		// while this could be in a different "thread(s)"
+		for tw := range stream {
+			
 			println(string(tw))
 			// heavy lifting
-
+			ct ++
+			if ct > 10 {
+				os.Exit(0)
+			}
 		}
 	}
 

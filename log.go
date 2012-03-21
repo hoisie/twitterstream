@@ -6,8 +6,7 @@ Usage of logging utilities
 	func main() {
 
 		flag.Parse()
-
-		sa.SetLogger(log.New(os.Stdout, "", log.Ldate|log.Ltime|log.Lshortfile), *logLevel)
+		sa.SetLogger(log.New(os.Stdout, "", log.Ltime|log.Lshortfile), *logLevel)
 		
 	}
 
@@ -41,7 +40,7 @@ var LogLevel int = ERROR
 
 var logger *log.Logger
 
-var LogLevelWords map[string]int = map[string]int{"fatal": 0, "error": 1, "warn": 2, "info": 3, "debug": 4}
+var LogLevelWords map[string]int = map[string]int{"fatal": 0, "error": 1, "warn": 2, "info": 3, "debug": 4, "none":-1}
 
 func SetLogger(l *log.Logger, logLevel string) {
 	logger = l
