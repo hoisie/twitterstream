@@ -1,4 +1,3 @@
-
 package main
 
 import (
@@ -9,12 +8,13 @@ import (
 	"os"
 )
 
-var pwd *string = flag.String("pwd", "password", "Password")
-var user *string = flag.String("user", "username", "username")
-var track *string = flag.String("track", "", "Twitter terms to track")
-var logLevel *string = flag.String("logging", "debug", "Which log level: [debug,info,warn,error,fatal]")
-
-var customUrl, _ = url.Parse("http://localhost:6767/stream")
+var (
+	pwd          *string = flag.String("pwd", "password", "Password")
+	user         *string = flag.String("user", "username", "username")
+	track        *string = flag.String("track", "", "Twitter terms to track")
+	logLevel     *string = flag.String("logging", "debug", "Which log level: [debug,info,warn,error,fatal]")
+	customUrl, _         = url.Parse("http://localhost:6767/stream")
+)
 
 func main() {
 
@@ -34,7 +34,7 @@ func main() {
 	err := client.Connect(customUrl, "")
 	if err != nil {
 		println(err.Error())
-	} 
+	}
 	for {
 		tw := <-stream
 		println(tw)
