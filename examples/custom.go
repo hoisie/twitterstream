@@ -21,22 +21,31 @@ func main() {
 	flag.Parse()
 
 	// make a go channel for 
-	stream := make(chan []byte)
+	stream := make(chan []byte, 200)
+	done := make(chan bool)
 
 	// set the logger and log level
 	httpstream.SetLogger(log.New(os.Stdout, "", log.Ldate|log.Ltime|log.Lshortfile), *logLevel)
 
 	// the stream listener effectively operates in one "thread"
 	client := httpstream.NewBasicAuthClient("", "", func(line []byte) {
-		println(string(line))
+		//println(string(line))
+		stream <- line
 	})
+	client.MaxWait = 20
 
-	err := client.Connect(customUrl, "")
+	err := client.Connect(customUrl, "", done)
 	if err != nil {
 		println(err.Error())
+	} else {
+		go func() {
+			for line := range stream {
+
+				println(string(line))
+			}
+		}()
+
+		_ = <-done
 	}
-	for {
-		tw := <-stream
-		println(tw)
-	}
+
 }

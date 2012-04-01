@@ -14,6 +14,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -27,18 +28,26 @@ var userUrl, _ = url.Parse("https://userstream.twitter.com/2/user.json")
 var siteStreamUrl, _ = url.Parse("https://sitestream.twitter.com/2b/site.json")
 
 var retryTimeout time.Duration = time.Second * 10
+
+func init() {
+	log.SetFlags(log.Ltime | log.Lshortfile | log.Lmicroseconds)
+}
+
 type streamConn struct {
 	client   *http.Client
 	url      *url.URL
 	authData string
 	postData string
 	stale    bool
-	wait     int
-	maxWait  int
+	// wait time before trying to reconnect, this will be 
+	// exponentially moved up until reaching maxWait, when
+	// it will exit
+	wait    int
+	maxWait int
 }
 
-func NewStreamConn() streamConn {
-	return streamConn{wait:1,maxWait:300}
+func NewStreamConn(max int) streamConn {
+	return streamConn{wait: 1, maxWait: max}
 }
 
 //type StreamHandler func([]byte)
@@ -62,7 +71,6 @@ func (conn *streamConn) connect() (*http.Response, error) {
 	if conn.authData != "" {
 		req.Header.Set("Authorization", "Basic "+conn.authData)
 	}
-	
 
 	if conn.postData != "" {
 		req.Method = "POST"
@@ -70,7 +78,7 @@ func (conn *streamConn) connect() (*http.Response, error) {
 		req.ContentLength = int64(len(conn.postData))
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	}
-	
+
 	resp, err := conn.client.Do(&req)
 
 	if err != nil {
@@ -87,12 +95,11 @@ func (conn *streamConn) connect() (*http.Response, error) {
 	return resp, nil
 }
 
-func (conn *streamConn) readStream(resp *http.Response, handler func([]byte), uniqueId string) {
+func (conn *streamConn) readStream(resp *http.Response, handler func([]byte), uniqueId string, done chan bool) {
 
 	var reader *bufio.Reader
 	reader = bufio.NewReader(resp.Body)
 
-	
 	for {
 		//we've been closed
 		if conn.stale {
@@ -103,18 +110,25 @@ func (conn *streamConn) readStream(resp *http.Response, handler func([]byte), un
 		}
 
 		line, err := reader.ReadBytes('\n')
+
 		if err != nil {
+
 			if conn.stale {
 				Debug("conn stale, continue")
 				continue
 			}
 			time.Sleep(time.Second * time.Duration(conn.wait))
-			//try reconnecting
+			//try reconnecting, but exponentially back off until MaxWait is reached
+			// then exit?  
 			resp, err := conn.connect()
 			if err != nil {
-				Log(ERROR, " Could not reconnect to source? sleeping and will retry ", err.Error())
+				Log(ERROR, " Could not reconnect to source? sleeping and will retry ", conn.wait, err.Error())
 				if conn.wait < conn.maxWait {
 					conn.wait = conn.wait * 2
+				} else {
+					Log(ERROR, "exiting, max wait reached")
+					done <- true
+					return
 				}
 				continue
 			}
@@ -128,12 +142,13 @@ func (conn *streamConn) readStream(resp *http.Response, handler func([]byte), un
 			reader = bufio.NewReader(resp.Body)
 			continue
 		} else if conn.wait != 1 {
-			conn.wait =  1
+			conn.wait = 1
 		}
 		line = bytes.TrimSpace(line)
 
 		if len(line) == 0 {
 			continue
+			Debug("zer len line?  ended?  ")
 		}
 		// should we look for twitter stall_warnings and then continue?
 		// https://dev.twitter.com/docs/streaming-api/methods
@@ -159,13 +174,18 @@ func (nopCloser) Close() error {
 	return nil
 }
 
+func getNopCloser(buf *bytes.Buffer) nopCloser {
+	return nopCloser{buf}
+}
+
 type Client struct {
 	Username string
 	Password string
 	// unique id for this connection
-	Uniqueid    string
-	conn    *streamConn
-	Handler func([]byte)
+	Uniqueid string
+	conn     *streamConn
+	MaxWait  int
+	Handler  func([]byte)
 }
 
 func NewBasicAuthClient(username, password string, handler func([]byte)) *Client {
@@ -173,14 +193,21 @@ func NewBasicAuthClient(username, password string, handler func([]byte)) *Client
 		Username: username,
 		Password: password,
 		Handler:  handler,
+		MaxWait:  300,
 	}
 }
 
+func (c *Client) SetMaxWait(max int) {
+	c.MaxWait = max
+	if c.conn != nil {
+		c.conn.maxWait = c.MaxWait
+	}
+}
 
-func (c *Client) Connect(url_ *url.URL, body string) (err error) {
+func (c *Client) Connect(url_ *url.URL, body string, done chan bool) (err error) {
 
 	var resp *http.Response
-	sc := NewStreamConn()
+	sc := NewStreamConn(c.MaxWait)
 
 	// if http basic auth
 	if c.Username != "" && c.Password != "" {
@@ -191,7 +218,7 @@ func (c *Client) Connect(url_ *url.URL, body string) (err error) {
 	sc.url = url_
 	resp, err = sc.connect()
 	if err != nil {
-		Log(ERROR," errror ", err)
+		Log(ERROR, " errror ", err)
 		goto Return
 	}
 
@@ -207,17 +234,18 @@ func (c *Client) Connect(url_ *url.URL, body string) (err error) {
 	}
 
 	c.conn = &sc
-	
-	go sc.readStream(resp, c.Handler, c.Uniqueid)
+
+	go sc.readStream(resp, c.Handler, c.Uniqueid, done)
 
 	return
 Return:
-	Log(ERROR,"exiting ")
+	Log(ERROR, "exiting ")
+	done <- true
 	return
 }
 
 // Follow a list of user ids
-func (c *Client) Follow(ids []int64) error {
+func (c *Client) Follow(ids []int64, done chan bool) error {
 	var body bytes.Buffer
 	body.WriteString("follow=")
 	for i, id := range ids {
@@ -227,11 +255,11 @@ func (c *Client) Follow(ids []int64) error {
 		}
 	}
 	Debug("TWFOLLOW ", followUrl, body.String())
-	return c.Connect(followUrl, body.String())
+	return c.Connect(followUrl, body.String(), done)
 }
 
 // Twitter Track a list of topics
-func (c *Client) Track(topics []string) error {
+func (c *Client) Track(topics []string, done chan bool) error {
 	var body bytes.Buffer
 	body.WriteString("track=")
 	for i, topic := range topics {
@@ -241,17 +269,17 @@ func (c *Client) Track(topics []string) error {
 		}
 	}
 	Debug("TWTRACK ", trackUrl, " body = ", body.String())
-	return c.Connect(trackUrl, body.String())
+	return c.Connect(trackUrl, body.String(), done)
 }
 
 // twitter sample stream
-func (c *Client) Sample() error {
-	return c.Connect(sampleUrl, "")
+func (c *Client) Sample(done chan bool) error {
+	return c.Connect(sampleUrl, "", done)
 }
 
 // Track User tweets and events, uses passed username/pwd
-func (c *Client) User() error {
-	return c.Connect(userUrl, "")
+func (c *Client) User(done chan bool) error {
+	return c.Connect(userUrl, "", done)
 }
 
 // Close the client

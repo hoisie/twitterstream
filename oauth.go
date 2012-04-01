@@ -9,8 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"httplib"
-	"log"
+	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"net/url"
@@ -33,12 +32,12 @@ type OAuthClient struct {
 }
 
 type oauthStreamClient struct {
-	httpClient *httplib.HttpRequestBuilder
-	headers    map[string]string
-	params     map[string]string
-	url        string
-	closed     bool
-	stream     chan *Tweet
+	request *http.Request
+	headers map[string]string
+	params  map[string]string
+	url     string
+	closed  bool
+	stream  chan *Tweet
 }
 
 func NewOAuthClient(consumerKey string, consumerSecret string) *OAuthClient {
@@ -79,14 +78,12 @@ func signatureBase(httpMethod string, base_uri string, params map[string]string)
 	buf.WriteString(URLEscape(base_uri))
 	buf.WriteString("&")
 
-	keys := make([]string, 0)
-
+	var keys []string
 	for k, _ := range params {
 		keys = append(keys, k)
 	}
 
 	sort.Strings(keys)
-
 	for i, k := range keys {
 		v := params[k]
 		buf.WriteString(URLEscape(k))
@@ -107,7 +104,8 @@ func signRequest(base string, consumerSecret string, tokenSecret string) string 
 		signingKey += URLEscape(tokenSecret)
 	}
 	hash := hmac.New(sha1.New, []byte(signingKey))
-	sum := hash.Sum([]byte(base))
+	hash.Write([]byte(base))
+	sum := hash.Sum(nil)
 	bb := new(bytes.Buffer)
 	encoder := base64.NewEncoder(base64.StdEncoding, bb)
 	encoder.Write(sum)
@@ -121,12 +119,12 @@ func (o *OAuthClient) GetRequestToken(callback string) *RequestToken {
 		"oauth_nonce":            nonce,
 		"oauth_callback":         URLEscape(callback),
 		"oauth_signature_method": "HMAC-SHA1",
-		"oauth_timestamp":        strconv.FormatInt(int64(time.Now().Second()), 10),
+		"oauth_timestamp":        strconv.FormatInt(time.Now().Unix(), 10),
 		"oauth_consumer_key":     o.ConsumerKey,
 		"oauth_version":          "1.0",
 	}
 
-	base := signatureBase("POST", requestTokenUrl.String(), params)
+	base := signatureBase("POST", requestTokenUrl.String() /*Raw*/, params)
 	signature := signRequest(base, o.ConsumerSecret, "")
 	params["oauth_signature"] = URLEscape(signature)
 
@@ -139,11 +137,21 @@ func (o *OAuthClient) GetRequestToken(callback string) *RequestToken {
 		}
 		i++
 	}
-	request := httplib.Post(requestTokenUrl.String())
-	request.Header("Authorization", authBuf.String())
-	request.Body("")
-	resp, err := request.AsString()
-	tokens, err := url.ParseQuery(resp)
+	request, err := http.NewRequest("POST", requestTokenUrl.String(), nil)
+	if err != nil {
+		println(err.Error())
+	}
+	request.Header.Set("Authorization", authBuf.String())
+	//request.Body("")
+	resp, err := http.DefaultClient.Do(request)
+	if err != nil {
+		println(err)
+	}
+	data, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		println(err)
+	}
+	tokens, err := url.ParseQuery(string(data))
 	if err != nil {
 		println(err.Error())
 	}
@@ -158,7 +166,7 @@ func (o *OAuthClient) GetRequestToken(callback string) *RequestToken {
 }
 
 func (rt *RequestToken) AuthorizeUrl() string {
-	return fmt.Sprintf("%s?oauth_token=%s", authorizeUrl.String(), rt.OAuthToken)
+	return fmt.Sprintf("%s?oauth_token=%s", authorizeUrl.String() /*Raw*/, rt.OAuthToken)
 }
 
 func (o *OAuthClient) GetAccessToken(requestToken *RequestToken, OAuthVerifier string) (*AccessToken, error) {
@@ -172,12 +180,12 @@ func (o *OAuthClient) GetAccessToken(requestToken *RequestToken, OAuthVerifier s
 		"oauth_token":            requestToken.OAuthToken,
 		"oauth_verifier":         OAuthVerifier,
 		"oauth_signature_method": "HMAC-SHA1",
-		"oauth_timestamp":        strconv.FormatInt(int64(time.Now().Second()), 10),
+		"oauth_timestamp":        strconv.FormatInt(time.Now().Unix(), 10),
 		"oauth_consumer_key":     o.ConsumerKey,
 		"oauth_version":          "1.0",
 	}
 
-	base := signatureBase("POST", requestTokenUrl.String(), params)
+	base := signatureBase("POST", requestTokenUrl.String() /*Raw*/, params)
 	signature := signRequest(base, o.ConsumerSecret, requestToken.OAuthTokenSecret)
 	params["oauth_signature"] = URLEscape(signature)
 
@@ -190,11 +198,20 @@ func (o *OAuthClient) GetAccessToken(requestToken *RequestToken, OAuthVerifier s
 		}
 		i++
 	}
-	request := httplib.Post(accessTokenUrl.String())
-	request.Header("Authorization", authBuf.String())
-	request.Body("")
-	resp, err := request.AsString()
-	tokens, err := url.ParseQuery(resp)
+	request, err := http.NewRequest("POST", accessTokenUrl.String(), nil)
+	if err != nil {
+		println(err)
+	}
+	request.Header.Set("Authorization", authBuf.String())
+	resp, err := http.DefaultClient.Do(request)
+	if err != nil {
+		println(err)
+	}
+	data, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		println(err)
+	}
+	tokens, err := url.ParseQuery(string(data))
 	if err != nil {
 		return nil, err
 	}
@@ -210,9 +227,11 @@ func (o *OAuthClient) GetAccessToken(requestToken *RequestToken, OAuthVerifier s
 }
 
 func (c *oauthStreamClient) connect() (*http.Response, error) {
-	c.httpClient = httplib.Post(c.url)
+	c.request, _ = http.NewRequest("POST", c.url, nil)
+	c.request.Header = http.Header{}
+	c.request.Header.Set("User-Agent", "ChimeraDemoTweetScraper")
 	for k, v := range c.headers {
-		c.httpClient.Header(k, v)
+		c.request.Header.Set(k, v)
 	}
 
 	var body bytes.Buffer
@@ -221,10 +240,9 @@ func (c *oauthStreamClient) connect() (*http.Response, error) {
 		body.WriteString("=")
 		body.WriteString(URLEscape(v))
 	}
-	c.httpClient.Body(body.String())
-
+	c.request.Body = getNopCloser(bytes.NewBufferString(body.String()))
 	//make the new connection
-	resp, err := c.httpClient.AsResponse()
+	resp, err := http.DefaultClient.Do(c.request)
 	if err != nil {
 		return resp, err
 	}
@@ -242,7 +260,7 @@ func (c *oauthStreamClient) readStream(resp *http.Response) {
 	for {
 		//we've been closed
 		if c.closed {
-			c.httpClient.Close()
+			//	c.httpClient.Close()
 			break
 		}
 		line, err := reader.ReadBytes('\n')
@@ -252,8 +270,8 @@ func (c *oauthStreamClient) readStream(resp *http.Response) {
 			}
 			resp, err := c.connect()
 			if err != nil {
-				log.Print(err.Error())
-				time.Sleep(retryTimeout)
+				println(err.Error())
+				time.Sleep(time.Duration(retryTimeout))
 				continue
 			}
 
@@ -269,17 +287,18 @@ func (c *oauthStreamClient) readStream(resp *http.Response) {
 		if len(line) == 0 {
 			continue
 		}
-		var message SiteStreamMessage
-		json.Unmarshal(line, &message)
-		if message.Message.Id != 0 {
-			c.stream <- &message.Message
+		var message Tweet
+		err = json.Unmarshal(line, &message)
+		if err != nil {
+			fmt.Println("err")
 		}
+		c.stream <- &message
 	}
 }
 
 func (c *oauthStreamClient) close() {
 	c.closed = true
-	c.httpClient.Close()
+	//	c.httpClient.Close()
 
 }
 
@@ -290,7 +309,7 @@ func (o *OAuthClient) connect(url_ string, OAuthToken string, OAuthTokenSecret s
 		"oauth_nonce":            nonce,
 		"oauth_token":            OAuthToken,
 		"oauth_signature_method": "HMAC-SHA1",
-		"oauth_timestamp":        strconv.FormatInt(int64(time.Now().Second()), 10),
+		"oauth_timestamp":        strconv.FormatInt(time.Now().Unix(), 10),
 		"oauth_consumer_key":     o.ConsumerKey,
 		"oauth_version":          "1.0",
 	}
@@ -330,7 +349,6 @@ func (o *OAuthClient) connect(url_ string, OAuthToken string, OAuthTokenSecret s
 	if o.streamClient != nil {
 		o.streamClient.close()
 	}
-
 	resp, err := streamClient.connect()
 	if err != nil {
 		return err
@@ -355,7 +373,10 @@ func (o *OAuthClient) SiteStream(OAuthToken string, OAuthTokenSecret string, ids
 		}
 	}
 	params := map[string]string{"follow": buf.String()}
-	return o.connect(siteStreamUrl.String(), OAuthToken, OAuthTokenSecret, params)
+	return o.connect(siteStreamUrl.String() /*Raw*/, OAuthToken, OAuthTokenSecret, params)
+}
+func (o *OAuthClient) UserStream(OAuthToken string, OAuthTokenSecret string) error {
+	return o.connect(userUrl.String() /*Raw*/, OAuthToken, OAuthTokenSecret, make(map[string]string))
 }
 
 // Close the client

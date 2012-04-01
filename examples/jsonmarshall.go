@@ -13,7 +13,6 @@ var user *string = flag.String("user", "username", "Twitter username")
 var track *string = flag.String("track", "", "Twitter terms to track")
 var logLevel *string = flag.String("logging", "debug", "Which log level: [debug,info,warn,error,fatal]")
 
-
 func HandleLine(th int, line []byte) {
 	switch {
 	case bytes.HasPrefix(line, []byte(`{"event":`)):
@@ -42,12 +41,14 @@ func main() {
 	httpstream.SetLogger(log.New(os.Stdout, "", log.Ldate|log.Ltime|log.Lshortfile), *logLevel)
 
 	stream := make(chan []byte)
+	done := make(chan bool)
+
 	client := httpstream.NewBasicAuthClient(*user, *pwd, func(line []byte) {
 		stream <- line
 	})
 	//err := client.Track([]string{"bieber,iphone,mac,android,ios,lady gaga,dancing,sick,game,when,why,where,how,who"}, stream)
 	// this opens a go routine that is effectively thread 1
-	err := client.Sample()
+	err := client.Sample(done)
 	if err != nil {
 		println(err.Error())
 	}

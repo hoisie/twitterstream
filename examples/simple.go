@@ -22,6 +22,7 @@ func main() {
 	// make a go channel for sending from listener to processor
 	// we buffer it, to help ensure we aren't backing up twitter or else they cut us off
 	stream := make(chan []byte,1000) 
+	done := make(chan bool)
 
 	// the stream listener effectively operates in one "thread"/goroutine
 	// as the httpstream Client processes inside a go routine it opens
@@ -35,21 +36,24 @@ func main() {
 	})
 
 	//err := client.Track([]string{"eat,iphone,mac,android,ios,burger"}, stream)
-	err := client.Sample()
+	err := client.Sample(done)
 	if err != nil {
 		httpstream.Log(ERROR, (err.Error())
 	} else {
 
-		// while this could be in a different "thread(s)"
-		for tw := range stream {
-			
-			println(string(tw))
-			// heavy lifting
-			ct ++
-			if ct > 10 {
-				os.Exit(0)
+		go func() {
+			// while this could be in a different "thread(s)"
+			for tw := range stream {
+				
+				println(string(tw))
+				// heavy lifting
+				ct ++
+				if ct > 10 {
+					os.Exit(0)
+				}
 			}
-		}
+		}()
+		_ = <- done
 	}
 
 }

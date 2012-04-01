@@ -5,7 +5,7 @@ A Go http streaming client. http-streaming is most-associated with the twitter s
 
 Changes from TwitterStream:
 
-    * No JSON serialization by default.  Move work to a different thread (with func handler).   https://github.com/araddon/httpstream/blob/c11036066b49469f835905370dbd7d39b5aa3c69/stream.go#L157   
+    * No JSON serialization by default. 
 
     * remove httplib.go, use generic request
 
