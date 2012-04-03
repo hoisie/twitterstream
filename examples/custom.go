@@ -25,7 +25,7 @@ func main() {
 	done := make(chan bool)
 
 	// set the logger and log level
-	httpstream.SetLogger(log.New(os.Stdout, "", log.Ldate|log.Ltime|log.Lshortfile), *logLevel)
+	httpstream.SetLogger(log.New(os.Stdout, "", log.Ltime|log.Lshortfile), *logLevel)
 
 	// the stream listener effectively operates in one "thread"
 	client := httpstream.NewBasicAuthClient("", "", func(line []byte) {

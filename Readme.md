@@ -1,14 +1,6 @@
 httpstream was forked from https://github.com/hoisie/twitterstream
 
-A Go http streaming client. http-streaming is most-associated with the twitter stream api.  This client works with twitter, but has also been tested against the data-sift stream as well as a stream I am developing for our startup http://lytics.io 
-
-
-Changes from TwitterStream:
-
-    * No JSON serialization by default. 
-
-    * remove httplib.go, use generic request
-
+A Go http streaming client. http-streaming is most-associated with the twitter stream api.  This client works with twitter, but has also been tested against the data-sift stream as well as http://flowdock.com
 
 
 
@@ -20,14 +12,18 @@ This is an example of using the `Twitter stream sample` :
 
     func main() {
         stream := make(chan []byte)
+        done := make(chan bool)
         client := httpstream.NewClient("yourusername", "pwd", func(line []byte) {
             stream <- line
         })
-        _ := client.Sample()  // non-blocking, it starts a go-routine
-        for line := range stream {
-            println(string(line))
-            // heavy lifting like json serialization, etc
-        }
+        go func() {
+            _ := client.Sample(done)
+            for line := range stream {
+                println(string(line))
+                // heavy lifting like json serialization, etc
+            }
+        }()
+        _ = <- done
     }
 
 

@@ -7,10 +7,12 @@ import (
 	"os"
 )
 
-var pwd *string = flag.String("pwd", "password", "Password")
-var user *string = flag.String("user", "username", "username")
-var track *string = flag.String("track", "", "Twitter terms to track")
-var logLevel *string = flag.String("logging", "debug", "Which log level: [debug,info,warn,error,fatal]")
+var (
+	pwd *string = flag.String("pwd", "password", "Password")
+	user *string = flag.String("user", "username", "username")
+	track *string = flag.String("track", "", "Twitter terms to track")
+	logLevel *string = flag.String("logging", "debug", "Which log level: [debug,info,warn,error,fatal]")
+)
 
 
 func main() {

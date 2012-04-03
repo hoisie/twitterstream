@@ -21,8 +21,7 @@ import (
 	"time"
 )
 
-var followUrl, _ = url.Parse("https://stream.twitter.com/1/statuses/filter.json")
-var trackUrl, _ = url.Parse("https://stream.twitter.com/1/statuses/filter.json")
+var filterUrl, _ = url.Parse("https://stream.twitter.com/1/statuses/filter.json")
 var sampleUrl, _ = url.Parse("https://stream.twitter.com/1/statuses/sample.json")
 var userUrl, _ = url.Parse("https://userstream.twitter.com/2/user.json")
 var siteStreamUrl, _ = url.Parse("https://sitestream.twitter.com/2b/site.json")
@@ -178,6 +177,7 @@ func getNopCloser(buf *bytes.Buffer) nopCloser {
 	return nopCloser{buf}
 }
 
+// Client for connecting
 type Client struct {
 	Username string
 	Password string
@@ -244,32 +244,68 @@ Return:
 	return
 }
 
-// Follow a list of user ids
-func (c *Client) Follow(ids []int64, done chan bool) error {
+// Filter, look for users, topics, and do backfills.   See doc: https://dev.twitter.com/docs/streaming-api/methods
+// @userids list of twitter userids to follow (up to 5000). 
+// @topics list of words, up to 500
+// @done channel to end on ::
+//		
+//		cl.Filter([]int64{1,2,3,4},nil, done )
+//
+//		cl.Filter([]int64{1,2,3,4},[]string{"golang"}, done )
+//
+func (c *Client) Filter(userids []int64, topics []string, watchStalls bool, done chan bool) error {
 	var body bytes.Buffer
-	body.WriteString("follow=")
-	for i, id := range ids {
-		body.WriteString(strconv.FormatInt(id, 10))
-		if i != len(ids)-1 {
-			body.WriteString(",")
+
+	body.WriteString("stall_warnings=true&")
+
+	if userids != nil && len(userids) > 0 {
+		body.WriteString("follow=")
+		for i, id := range userids {
+			body.WriteString(strconv.FormatInt(id, 10))
+			if i != len(userids)-1 {
+				body.WriteString(",")
+			}
 		}
+		body.WriteString("&")
 	}
-	Debug("TWFOLLOW ", followUrl, body.String())
-	return c.Connect(followUrl, body.String(), done)
+	if topics != nil && len(topics) > 0 {
+		body.WriteString("track=")
+		for i, topic := range topics {
+			body.WriteString(topic)
+			if i != len(topics)-1 {
+				body.WriteString(",")
+			}
+		}
+		body.WriteString("&")
+	}
+	Debug("TWFILTER ", filterUrl, body.String())
+	if watchStalls {
+		c.Handler = stallWatcher(c.Handler)
+	}
+
+	return c.Connect(filterUrl, body.String(), done)
 }
 
-// Twitter Track a list of topics
-func (c *Client) Track(topics []string, done chan bool) error {
-	var body bytes.Buffer
-	body.WriteString("track=")
-	for i, topic := range topics {
-		body.WriteString(topic)
-		if i != len(topics)-1 {
-			body.WriteString(",")
+func stallWatcher(handler func([]byte)) func([]byte) {
+	/*
+		{ "warning":{
+			"code":"FALLING_BEHIND",
+			"message":"Your connection is falling behind and messages are being queued for delivery to you. Your queue is now over 60% full. You will be disconnected when the queue is full.",
+			"percent_full": 60
+		  }
 		}
+	*/
+	lookFor := []byte(`"code":"FALLING_BEHIND"`)
+	pctFull := []byte(`"percent_full"`)
+	return func(line []byte) {
+		if bytes.Index(line, lookFor) > 0 {
+			idx := bytes.Index(line, pctFull)
+			Log(ERROR, "FALLING BEHIND!!!!  ", string(line[idx+1:idx+5]))
+		} else {
+			handler(line)
+		}
+
 	}
-	Debug("TWTRACK ", trackUrl, " body = ", body.String())
-	return c.Connect(trackUrl, body.String(), done)
 }
 
 // twitter sample stream
