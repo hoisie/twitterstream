@@ -1,5 +1,9 @@
 package httpstream
 
+import (
+	"bytes"
+)
+
 type User struct {
 	Lang                         string
 	Verified                     bool
@@ -33,6 +37,7 @@ type User struct {
 
 type Tweet struct {
 	Text                    string
+	Entities                Entity
 	RawBytes                []byte
 	Truncated               bool
 	Geo                     string
@@ -60,6 +65,52 @@ type Event struct {
 	Event      string
 }
 
+type Entity struct {
+	Hashtags      []Hashtag
+	Urls          []TwitterUrl
+	User_mentions []Mention
+}
+
+type Hashtag struct {
+	Text    string
+	Indices []int
+}
+type TwitterUrl struct {
+	Url          string
+	Expanded_url string
+	Display_url  string
+	Indices      []int
+}
+type Mention struct {
+	Screen_name string
+	Name        string
+	Id          int64
+	Id_str      string
+	Indices     []int
+}
+
 type FriendList struct {
 	Friends []int64
+}
+
+/*
+The twitter stream contains non-tweets (deletes)
+
+{"delete":{"status":{"user_id_str":"36484472","id_str":"191029491823423488","user_id":36484472,"id":191029491823423488}}}
+{"delete":{"status":{"id_str":"191184618165256194","id":191184618165256194,"user_id":355665960,"user_id_str":"355665960"}}}
+{"delete":{"status":{"id_str":"172129790210482176","id":172129790210482176,"user_id_str":"499324766","user_id":499324766}}}
+{"delete":{"status":{"user_id_str":"366839894","user_id":366839894,"id_str":"116974717763719168","id":116974717763719168}}}
+{"delete":{"status":{"user_id_str":"382739413","id":191184546841112579,"user_id":382739413,"id_str":"191184546841112579"}}}
+{"delete":{"status":{"user_id_str":"388738304","id_str":"123723751366987776","id":123723751366987776,"user_id":388738304}}}
+{"delete":{"status":{"user_id_str":"156157535","id_str":"190608148829179907","id":190608148829179907,"user_id":156157535}}}
+
+*/
+// a function to filter out the delete messages
+func OnlyTweetsFilter(handler func([]byte)) func([]byte) {
+	delTw := []byte(`{"delete"`)
+	return func(line []byte) {
+		if !bytes.HasPrefix(line, delTw) {
+			handler(line)
+		}
+	}
 }

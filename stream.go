@@ -104,7 +104,6 @@ func (conn *streamConn) readStream(resp *http.Response, handler func([]byte), un
 		if conn.stale {
 			conn.Close()
 			Debug("Connection closed, shutting down ")
-			//conn.Transport.CloseIdleConnections()
 			break
 		}
 
@@ -147,12 +146,7 @@ func (conn *streamConn) readStream(resp *http.Response, handler func([]byte), un
 
 		if len(line) == 0 {
 			continue
-			Debug("zer len line?  ended?  ")
 		}
-		// should we look for twitter stall_warnings and then continue?
-		// https://dev.twitter.com/docs/streaming-api/methods
-
-		// TODO:  look for status, stall warnings, etc
 		handler(line)
 	}
 }
@@ -244,7 +238,7 @@ Return:
 	return
 }
 
-// Filter, look for users, topics, and do backfills.   See doc: https://dev.twitter.com/docs/streaming-api/methods
+// Filter, look for users, topics.   See doc: https://dev.twitter.com/docs/streaming-api/methods
 // @userids list of twitter userids to follow (up to 5000). 
 // @topics list of words, up to 500
 // @done channel to end on ::
@@ -280,13 +274,14 @@ func (c *Client) Filter(userids []int64, topics []string, watchStalls bool, done
 	}
 	Debug("TWFILTER ", filterUrl, body.String())
 	if watchStalls {
-		c.Handler = stallWatcher(c.Handler)
+		c.Handler = StallWatcher(c.Handler)
 	}
 
 	return c.Connect(filterUrl, body.String(), done)
 }
 
-func stallWatcher(handler func([]byte)) func([]byte) {
+// a handler wrapper to watch for twitter stall warnings
+func StallWatcher(handler func([]byte)) func([]byte) {
 	/*
 		{ "warning":{
 			"code":"FALLING_BEHIND",
