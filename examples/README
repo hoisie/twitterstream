@@ -1,6 +1,16 @@
 To run examples:
 	
+
 	go run jsonmarshall.go
 
+	# valid twitter username/pwd will get sample stream
 	go run simple.go -user=myusername -pwd=mypwd
+
+	# for flowdock.com
+	go run flowdock.go -token=x3456 -flow=myorg/main
 	
+	# send to zeromq
+	#   sink is the zmq address to bind to:  downstream can subscribe
+	go get github.com/alecthomas/gozmq
+	go run zmq.go -user=myusername -pwd=mypwd  --sink=tcp://*:5555
+
