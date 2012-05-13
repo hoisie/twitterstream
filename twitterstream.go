@@ -6,14 +6,16 @@ import (
     "crypto/rand"
     "crypto/tls"
     "encoding/base64"
-    "http"
+    "encoding/json"
+    "errors"
     "io"
-    "json"
-    "os"
     "net"
+    "net/http"
+    "net/http/httputil"
+    "net/url"
+    "os"
     "strconv"
     "time"
-    "url"
 )
 
 var followUrl, _ = url.Parse("https://stream.twitter.com/1/statuses/filter.json")
@@ -25,7 +27,7 @@ var siteStreamUrl, _ = url.Parse("https://betastream.twitter.com/2b/site.json")
 var retryTimeout int64 = 5e9
 
 type streamConn struct {
-    clientConn   *http.ClientConn
+    clientConn   *httputil.ClientConn
     url          *url.URL
     stream       chan *Tweet
     eventStream  chan *Event
@@ -40,12 +42,12 @@ func (conn *streamConn) Close() {
     conn.stale = true
 }
 
-func (conn *streamConn) connect() (*http.Response, os.Error) {
+func (conn *streamConn) connect() (*http.Response, error) {
     if conn.stale {
-        return nil, os.NewError("Stale connection")
+        return nil, errors.New("Stale connection")
     }
     var tcpConn net.Conn
-    var err os.Error
+    var err error
     if proxy := os.Getenv("HTTP_PROXY"); len(proxy) > 0 {
         proxy_url, _ := url.Parse(proxy)
         tcpConn, err = net.Dial("tcp", proxy_url.Host)
@@ -55,10 +57,10 @@ func (conn *streamConn) connect() (*http.Response, os.Error) {
     if err != nil {
         return nil, err
     }
-    cf := &tls.Config{Rand: rand.Reader, Time: time.Nanoseconds}
+    cf := &tls.Config{Rand: rand.Reader, Time: time.Now}
     ssl := tls.Client(tcpConn, cf)
 
-    conn.clientConn = http.NewClientConn(ssl, nil)
+    conn.clientConn = httputil.NewClientConn(ssl, nil)
 
     var req http.Request
     req.URL = conn.url
@@ -101,12 +103,12 @@ func (conn *streamConn) readStream(resp *http.Response) {
             //try reconnecting
             resp, err := conn.connect()
             if err != nil {
-                println(err.String())
-                time.Sleep(retryTimeout)
+                println(err.Error())
+                time.Sleep(time.Duration(retryTimeout))
                 continue
             }
             if resp.StatusCode != 200 {
-                time.Sleep(retryTimeout)
+                time.Sleep(time.Duration(retryTimeout))
                 continue
             }
 
@@ -155,7 +157,7 @@ type nopCloser struct {
     io.Reader
 }
 
-func (nopCloser) Close() os.Error { return nil }
+func (nopCloser) Close() error { return nil }
 
 type Client struct {
     Username     string
@@ -173,9 +175,9 @@ func NewClient(username, password string) *Client {
     }
 }
 
-func (c *Client) connect(url_ *url.URL, body string) (err os.Error) {
+func (c *Client) connect(url_ *url.URL, body string) (err error) {
     if c.Username == "" || c.Password == "" {
-        return os.NewError("The username or password is invalid")
+        return errors.New("The username or password is invalid")
     }
 
     var resp *http.Response
@@ -190,7 +192,7 @@ func (c *Client) connect(url_ *url.URL, body string) (err os.Error) {
     }
 
     if resp.StatusCode != 200 {
-        err = os.NewError("Twitterstream HTTP Error: " + resp.Status +
+        err = errors.New("Twitterstream HTTP Error: " + resp.Status +
             "\n" + url_.Path)
         goto Return
     }
@@ -211,12 +213,12 @@ Return:
 }
 
 // Follow a list of user ids
-func (c *Client) Follow(ids []int64, stream chan *Tweet) os.Error {
+func (c *Client) Follow(ids []int64, stream chan *Tweet) error {
     c.stream = stream
     var body bytes.Buffer
     body.WriteString("follow=")
     for i, id := range ids {
-        body.WriteString(strconv.Itoa64(id))
+        body.WriteString(strconv.FormatInt(id, 10))
         if i != len(ids)-1 {
             body.WriteString(",")
         }
@@ -225,7 +227,7 @@ func (c *Client) Follow(ids []int64, stream chan *Tweet) os.Error {
 }
 
 // Track a list of topics
-func (c *Client) Track(topics []string, stream chan *Tweet) os.Error {
+func (c *Client) Track(topics []string, stream chan *Tweet) error {
     c.stream = stream
     var body bytes.Buffer
     body.WriteString("track=")
@@ -239,13 +241,13 @@ func (c *Client) Track(topics []string, stream chan *Tweet) os.Error {
 }
 
 // Filter a list of user ids
-func (c *Client) Sample(stream chan *Tweet) os.Error {
+func (c *Client) Sample(stream chan *Tweet) error {
     c.stream = stream
     return c.connect(sampleUrl, "")
 }
 
 // Track User tweets and events
-func (c *Client) User(stream chan *Tweet, eventStream chan *Event, friendStream chan *FriendList) os.Error {
+func (c *Client) User(stream chan *Tweet, eventStream chan *Event, friendStream chan *FriendList) error {
     c.stream = stream
     c.eventStream = eventStream
     c.friendStream = friendStream
