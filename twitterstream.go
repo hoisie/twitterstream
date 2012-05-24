@@ -30,6 +30,7 @@ type streamConn struct {
     stream       chan *Tweet
     eventStream  chan *Event
     friendStream chan *FriendList
+    rawStream    chan *[]byte
     authData     string
     postData     string
     stale        bool
@@ -118,6 +119,10 @@ func (conn *streamConn) readStream(resp *http.Response) {
         if len(line) == 0 {
             continue
         }
+        
+        if conn.rawStream != nil {
+            conn.rawStream <- &line
+        }
         switch {
         case bytes.HasPrefix(line, []byte(`{"event":`)):
             if conn.eventStream != nil {
@@ -163,6 +168,7 @@ type Client struct {
     stream       chan *Tweet
     eventStream  chan *Event
     friendStream chan *FriendList
+    rawStream    chan *[]byte
     conn         *streamConn
 }
 
@@ -204,6 +210,7 @@ func (c *Client) connect(url_ *url.URL, body string) (err os.Error) {
     sc.stream = c.stream
     sc.eventStream = c.eventStream
     sc.friendStream = c.friendStream
+    sc.rawStream = c.rawStream
     go sc.readStream(resp)
 
 Return:
@@ -241,6 +248,12 @@ func (c *Client) Track(topics []string, stream chan *Tweet) os.Error {
 // Filter a list of user ids
 func (c *Client) Sample(stream chan *Tweet) os.Error {
     c.stream = stream
+    return c.connect(sampleUrl, "")
+}
+
+// Sample raw data
+func (c *Client) SampleRaw(stream chan *[]byte) os.Error {
+    c.rawStream = stream
     return c.connect(sampleUrl, "")
 }
 
