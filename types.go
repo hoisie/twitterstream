@@ -39,7 +39,7 @@ type Tweet struct {
     Favorited               bool
     Source                  string
     Contributors            string
-    In_reply_to_status_id   string
+    In_reply_to_status_id   int64
     In_reply_to_user_id     int64
     Id                      int64
     Created_at              string
