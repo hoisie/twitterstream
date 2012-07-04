@@ -1,13 +1,13 @@
 package main
 
-import "twitterstream"
+import "github.com/hoisie/twitterstream"
 
 func main() {
     stream := make(chan *twitterstream.Tweet)
     client := twitterstream.NewClient("username", "password")
     err := client.Track([]string{"miley"}, stream)
     if err != nil {
-        println(err.String())
+        println(err.Error())
     }
     for {
         tw := <-stream
