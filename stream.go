@@ -1,7 +1,7 @@
 /*
 A Go http streaming client. http-streaming is most-associated with the twitter stream api.  
-This client works with twitter, but has also been tested against the data-sift stream 
-as well as a stream-server I use internally (mongrel2)
+This client works with twitter, but has also been tested against the data-sift stream and
+flowdock stream api's
 
 httpstream was forked from https://github.com/hoisie/twitterstream
 
@@ -182,11 +182,27 @@ type Client struct {
 	Handler  func([]byte)
 }
 
+func NewClient(handler func([]byte)) *Client {
+	return &Client{
+		Handler: handler,
+		MaxWait: 300,
+	}
+}
+
 func NewBasicAuthClient(username, password string, handler func([]byte)) *Client {
 	return &Client{
 		Username: username,
 		Password: password,
 		Handler:  handler,
+		MaxWait:  300,
+	}
+}
+// Create a new basic Auth Channel Handler
+func NewChannelClient(username, password string, bc chan []byte) *Client {
+	return &Client{
+		Username: username,
+		Password: password,
+		Handler:  func(b []byte) { bc <- b},
 		MaxWait:  300,
 	}
 }
@@ -243,9 +259,9 @@ Return:
 // @topics list of words, up to 500
 // @done channel to end on ::
 //		
-//		cl.Filter([]int64{1,2,3,4},nil, done )
+//		cl.Filter([]int64{1,2,3,4},nil, false, done )
 //
-//		cl.Filter([]int64{1,2,3,4},[]string{"golang"}, done )
+//		cl.Filter([]int64{1,2,3,4},[]string{"golang"}, false, done )
 //
 func (c *Client) Filter(userids []int64, topics []string, watchStalls bool, done chan bool) error {
 	var body bytes.Buffer

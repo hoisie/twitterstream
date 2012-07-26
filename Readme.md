@@ -13,7 +13,7 @@ This is an example of using the `Twitter stream sample` :
     func main() {
         stream := make(chan []byte)
         done := make(chan bool)
-        client := httpstream.NewClient("yourusername", "pwd", func(line []byte) {
+        client := httpstream.NewBasicAuthClient("yourusername", "pwd", func(line []byte) {
             stream <- line
         })
         go func() {

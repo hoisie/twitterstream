@@ -50,8 +50,34 @@ type Tweet struct {
 	Id                      int64
 	Id_str                  string
 	Created_at              string
+	Retweet_Count           int32
+	Retweeted               bool
+	Possibly_Sensitive      bool
 	User                    *User
 }
+
+func (t *Tweet) Urls() []string {
+	if len(t.Entities.Urls) > 0 {
+		urls := make([]string,0)
+		for _, u := range t.Entities.Urls {
+			urls = append(urls, u.Expanded_url)
+		}
+		return urls
+	}
+	return nil
+}
+
+func (t *Tweet) Hashes() []string {
+	if len(t.Entities.Hashtags) > 0 {
+		tags := make([]string,0)
+		for _, t := range t.Entities.Hashtags {
+			tags = append(tags, t.Text)
+		}
+		return tags
+	}
+	return nil
+}
+
 
 type SiteStreamMessage struct {
 	For_user int64
@@ -69,6 +95,7 @@ type Entity struct {
 	Hashtags      []Hashtag
 	Urls          []TwitterUrl
 	User_mentions []Mention
+	Media         []Media
 }
 
 type Hashtag struct {
@@ -87,6 +114,33 @@ type Mention struct {
 	Id          int64
 	Id_str      string
 	Indices     []int
+}
+
+type Media struct {
+	Id              int64
+	Id_str          string
+	Display_url     string
+	Expanded_url    string
+	Indices         []int
+	Media_url       string
+	Media_url_https string
+	Url             string
+	Type            string
+	Screen_name     string
+	Sizes           []Sizes
+}
+
+type Sizes struct {
+	large  Dimensions
+	medium Dimensions
+	small  Dimensions
+	thumb  Dimensions
+}
+
+type Dimensions struct {
+	w      int
+	resize string
+	h      int
 }
 
 type FriendList struct {

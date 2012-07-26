@@ -260,7 +260,7 @@ func (c *oauthStreamClient) readStream(resp *http.Response) {
 	for {
 		//we've been closed
 		if c.closed {
-			//	c.httpClient.Close()
+			resp.Body.Close()
 			break
 		}
 		line, err := reader.ReadBytes('\n')
@@ -270,7 +270,7 @@ func (c *oauthStreamClient) readStream(resp *http.Response) {
 			}
 			resp, err := c.connect()
 			if err != nil {
-				println(err.Error())
+				Log(ERROR, err.Error())
 				time.Sleep(time.Duration(retryTimeout))
 				continue
 			}
@@ -290,7 +290,7 @@ func (c *oauthStreamClient) readStream(resp *http.Response) {
 		var message Tweet
 		err = json.Unmarshal(line, &message)
 		if err != nil {
-			fmt.Println("err")
+			Log(ERROR, err)
 		}
 		c.stream <- &message
 	}

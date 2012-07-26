@@ -35,7 +35,7 @@ func main() {
 	SetLogger(log.New(os.Stdout, "", log.Ldate|log.Ltime|log.Lshortfile), *logLevel)
 
 	// the stream listener effectively operates in one "thread"
-	client := NewBasicAuthClient("", "", func(line []byte) {
+	client := NewClient(func(line []byte) {
 		stream <- line
 	})
 	_ = client.Connect(flowUrl, "", done)
