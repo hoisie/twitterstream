@@ -29,6 +29,23 @@ This is an example of using the `Twitter stream sample` :
 
 There are a few more samples in the Examples folder.
 
+Use a channel instead of func :
+
+        stream := make(chan []byte)
+        done := make(chan bool)
+        client := httpstream.NewChannelClient("yourusername", "pwd", stream)
+        go func() {
+            for line := range stream {
+                println(string(line))
+            }
+        }()
+        client.Sample(done)
+        _ = <- done
 
 
-For more information about this API, visit the [twitter documentation page](https://dev.twitter.com/docs/streaming-api/methods). 
+
+For more information about streaming apis
+
+    - twitter stream api:  https://dev.twitter.com/docs/streaming-api/methods
+    - flowdock: https://www.flowdock.com/api
+    - datasift stream api:  http://dev.datasift.com/docs/streaming-api

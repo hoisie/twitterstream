@@ -2,51 +2,107 @@ package httpstream
 
 import (
 	"bytes"
+	"encoding/json"
+	"strconv"
 )
 
+// details about all the nullable types http://code.google.com/p/go/issues/detail?id=2540
+
+type Int64Nullable int64
+
+func (i Int64Nullable) UnmarshalJSON(data []byte) error {
+	if len(data) > 0 {
+		//ParseInt(s string, base int, bitSize int) (i int64, err error)
+		if in, err := strconv.ParseInt(string(data), 10, 64); err == nil {
+			i = Int64Nullable(in)
+		}
+
+	}
+	return nil
+}
+
+type IntNullable int
+
+func (i IntNullable) UnmarshalJSON(data []byte) error {
+	if len(data) > 0 {
+		//ParseInt(s string, base int, bitSize int) (i int64, err error)
+		if in, err := strconv.ParseInt(string(data), 10, 32); err == nil {
+			i = IntNullable(in)
+		}
+
+	}
+	return nil
+}
+
+type StringNullable string
+
+func (s StringNullable) UnmarshalJSON(data []byte) error {
+	if len(data) > 0 {
+		s = StringNullable(string(data))
+	}
+	return nil
+}
+
+type BoolNullable bool
+
+func (b BoolNullable) UnmarshalJSON(data []byte) error {
+	if len(data) > 0 {
+		//ParseBool(str string) (value bool, err error)
+		if bo, err := strconv.ParseBool(string(data)); err == nil {
+			b = BoolNullable(bo)
+		}
+	}
+	return nil
+}
+
 type User struct {
-	Lang                         string
-	Verified                     bool
-	Followers_count              int
-	Location                     string
-	Screen_name                  string
-	Following                    bool
-	Friends_count                int
-	Profile_background_color     string
-	Favourites_count             int
-	Description                  string
-	Notifications                string
-	Profile_text_color           string
-	Url                          string
-	Time_zone                    string
-	Statuses_count               int
-	Profile_link_color           string
-	Geo_enabled                  bool
-	Profile_background_image_url string
-	Protected                    bool
-	Contributors_enabled         bool
-	Profile_sidebar_fill_color   string
-	Name                         string
-	Profile_background_tile      string
-	Created_at                   string
-	Profile_image_url            string
 	Id                           int64
-	Utc_offset                   int
+	Name                         string
+	ScreenName                   string `json:"screen_name"`
+	ContributorsEnabled          bool   `json:"contributors_enabled"`
+	CreatedAt                    string `json:"created_at"`
+	Description                  string
+	FavouritesCount              int          `json:"favourites_count"`
+	Followerscount               int          `json:"followers_count"`
+	Following                    BoolNullable // "following":null,
+	Friendscount                 int          `json:"friends_count"`
+	Geo_enabled                  bool
+	Lang                         string
+	Location                     string
+	Listed_count                 int            `json:"listed_count"`
+	Notifications                StringNullable //"notifications":null,
+	Profile_text_color           string
+	Profile_link_color           string
+	Profile_background_image_url string
+	Profile_background_color     string
+	Profile_sidebar_fill_color   string
+	Profile_image_url            string
 	Profile_sidebar_border_color string
+	Profile_background_tile      bool
+	Protected                    bool
+	Statuses_Count               int `json:"statuses_count"`
+	Time_zone                    StringNullable
+	Url                          StringNullable // "url":null
+	Utc_offset                   IntNullable    // "utc_offset":null,
+	Verified                     bool
+	//"show_all_inline_media":false,
+	//"default_profile":false,
+	//"follow_request_sent":null,
+	//"is_translator":false,
+	//"profile_use_background_image":true,
+	//"default_profile_image":false,
 }
 
 type Tweet struct {
 	Text                    string
 	Entities                Entity
-	RawBytes                []byte
-	Truncated               bool
-	Geo                     string
-	In_reply_to_screen_name string
 	Favorited               bool
 	Source                  string
-	Contributors            string
-	In_reply_to_status_id   int64
-	In_reply_to_user_id     int64
+	Contributors            []Contributor
+	Coordinates             Coordinate
+	In_reply_to_screen_name StringNullable
+	In_reply_to_status_id   Int64Nullable
+	In_reply_to_user_id     Int64Nullable
 	Id                      int64
 	Id_str                  string
 	Created_at              string
@@ -54,11 +110,16 @@ type Tweet struct {
 	Retweeted               bool
 	Possibly_Sensitive      bool
 	User                    *User
+	RawBytes                []byte
+	Truncated               bool
+	//Geo                     string   // deprecated
+	//Place                  // "place":null,
+	//RetweetedStatus         Tweet `json:"retweeted_status"`
 }
 
 func (t *Tweet) Urls() []string {
 	if len(t.Entities.Urls) > 0 {
-		urls := make([]string,0)
+		urls := make([]string, 0)
 		for _, u := range t.Entities.Urls {
 			urls = append(urls, u.Expanded_url)
 		}
@@ -69,7 +130,7 @@ func (t *Tweet) Urls() []string {
 
 func (t *Tweet) Hashes() []string {
 	if len(t.Entities.Hashtags) > 0 {
-		tags := make([]string,0)
+		tags := make([]string, 0)
 		for _, t := range t.Entities.Hashtags {
 			tags = append(tags, t.Text)
 		}
@@ -78,6 +139,37 @@ func (t *Tweet) Hashes() []string {
 	return nil
 }
 
+// Create a nullable coordinates, as the data comes across like so:  
+//    "coordinates":null,
+type Coordinate struct {
+	Coordinates []float64
+	Type        string
+}
+
+func (c *Coordinate) UnmarshalJSON(data []byte) error {
+	if len(data) > 0 {
+		m := make(map[string]interface{})
+		if err := json.Unmarshal(data, m); err == nil {
+			if co, ok := m["coordinates"]; ok {
+				if cof, ok := co.([]float64); ok {
+					c.Coordinates = cof
+				}
+			}
+			if ty, ok := m["type"]; ok {
+				if tys, ok := ty.(string); ok {
+					c.Type = tys
+				}
+			}
+		}
+	}
+	return nil
+}
+
+type Contributor struct {
+	Id          int64
+	Id_str      string
+	Screen_name string
+}
 
 type SiteStreamMessage struct {
 	For_user int64
