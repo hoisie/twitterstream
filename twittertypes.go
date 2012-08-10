@@ -61,14 +61,14 @@ type User struct {
 	ScreenName                   string `json:"screen_name"`
 	ContributorsEnabled          bool   `json:"contributors_enabled"`
 	CreatedAt                    string `json:"created_at"`
-	Description                  string
+	Description                  StringNullable
 	FavouritesCount              int          `json:"favourites_count"`
 	Followerscount               int          `json:"followers_count"`
 	Following                    BoolNullable // "following":null,
 	Friendscount                 int          `json:"friends_count"`
 	Geo_enabled                  bool
 	Lang                         string
-	Location                     string
+	Location                     StringNullable
 	Listed_count                 int            `json:"listed_count"`
 	Notifications                StringNullable //"notifications":null,
 	Profile_text_color           string

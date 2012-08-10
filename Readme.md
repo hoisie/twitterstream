@@ -46,6 +46,6 @@ Use a channel instead of func :
 
 For more information about streaming apis
 
-    - twitter stream api:  https://dev.twitter.com/docs/streaming-api/methods
-    - flowdock: https://www.flowdock.com/api
-    - datasift stream api:  http://dev.datasift.com/docs/streaming-api
+- twitter stream api:  https://dev.twitter.com/docs/streaming-api/methods
+- flowdock: https://www.flowdock.com/api
+- datasift stream api:  http://dev.datasift.com/docs/streaming-api

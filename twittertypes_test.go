@@ -234,8 +234,95 @@ var (
 	    "utc_offset": null,
 	    "verified": false
 	  }
-	}`}
-	//tweet3 = `{"contributors":null,"text":"The Order of the Stick Reprint Drive by Rich Burlew \u2014 Kickstarter http:\/\/t.co\/8YpU1gKl via @kickstarter","entities":{"urls":[{"indices":[66,86],"display_url":"kck.st\/y6a9RV","expanded_url":"http:\/\/kck.st\/y6a9RV","url":"http:\/\/t.co\/8YpU1gKl"}],"hashtags":[],"user_mentions":[{"indices":[91,103],"screen_name":"kickstarter","id_str":"16186995","name":"Kickstarter","id":16186995}]},"possibly_sensitive_editable":true,"place":null,"retweeted":false,"in_reply_to_status_id":null,"possibly_sensitive":false,"in_reply_to_screen_name":null,"in_reply_to_user_id":null,"truncated":false,"source":"\u003Ca href=\"http:\/\/twitter.com\/tweetbutton\" rel=\"nofollow\"\u003ETweet Button\u003C\/a\u003E","id_str":"232147157837287424","in_reply_to_status_id_str":null,"favorited":false,"in_reply_to_user_id_str":null,"user":{"profile_background_tile":false,"friends_count":0,"show_all_inline_media":false,"lang":"en","verified":false,"profile_background_image_url_https":"https:\/\/si0.twimg.com\/images\/themes\/theme1\/bg.png","time_zone":null,"profile_sidebar_fill_color":"DDEEF6","listed_count":0,"profile_image_url_https":"https:\/\/si0.twimg.com\/sticky\/default_profile_images\/default_profile_0_normal.png","location":null,"profile_sidebar_border_color":"C0DEED","description":null,"default_profile":true,"follow_request_sent":null,"statuses_count":4,"following":null,"notifications":null,"id_str":"738441984","is_translator":false,"profile_use_background_image":true,"screen_name":"sunnykhanna1983","profile_text_color":"333333","profile_background_image_url":"http:\/\/a0.twimg.com\/images\/themes\/theme1\/bg.png","protected":false,"default_profile_image":true,"profile_link_color":"0084B4","name":"SUNNY","contributors_enabled":false,"geo_enabled":false,"favourites_count":0,"created_at":"Sun Aug 05 11:36:11 +0000 2012","followers_count":0,"profile_image_url":"http:\/\/a0.twimg.com\/sticky\/default_profile_images\/default_profile_0_normal.png","id":738441984,"utc_offset":null,"profile_background_color":"C0DEED","url":null},"retweet_count":0,"id":232147157837287424,"created_at":"Sun Aug 05 16:12:50 +0000 2012","coordinates":null,"geo":null}`
+	}`, `{
+  "contributors": null,
+  "coordinates": null,
+  "created_at": "Fri Aug 10 17:59:24 +0000 2012",
+  "entities": {
+    "hashtags": null,
+    "urls": [
+      {
+        "display_url": "kck.st/OYWmRT",
+        "expanded_url": "http://kck.st/OYWmRT",
+        "indices": [
+          86,
+          106
+        ],
+        "url": "http://t.co/QNcHxqT5"
+      }
+    ],
+    "user_mentions": [
+      {
+        "id": 16186995,
+        "id_str": "16186995",
+        "indices": [
+          111,
+          123
+        ],
+        "name": "Kickstarter",
+        "screen_name": "kickstarter"
+      }
+    ]
+  },
+  "favorited": false,
+  "geo": null,
+  "id": 233985915146608641,
+  "id_str": "233985915146608641",
+  "in_reply_to_screen_name": null,
+  "in_reply_to_status_id": null,
+  "in_reply_to_status_id_str": null,
+  "in_reply_to_user_id": null,
+  "in_reply_to_user_id_str": null,
+  "place": null,
+  "possibly_sensitive": false,
+  "possibly_sensitive_editable": true,
+  "retweet_count": 0,
+  "retweeted": false,
+  "source": "\u003ca href=\"http://twitter.com/tweetbutton\" rel=\"nofollow\"\u003eTweet Button\u003c/a\u003e",
+  "text": "On Richmond's Wheel: The History of Cycling in Richmond by Thomas Houff — Kickstarter http://t.co/QNcHxqT5 via @kickstarter",
+  "truncated": false,
+  "user": {
+    "contributors_enabled": false,
+    "created_at": "Fri Aug 10 17:45:38 +0000 2012",
+    "default_profile": true,
+    "default_profile_image": false,
+    "description": null,
+    "favourites_count": 0,
+    "follow_request_sent": null,
+    "followers_count": 0,
+    "following": null,
+    "friends_count": 9,
+    "geo_enabled": false,
+    "id": 749763571,
+    "id_str": "749763571",
+    "is_translator": false,
+    "lang": "en",
+    "listed_count": 0,
+    "location": null,
+    "name": "On Richmond's Wheel",
+    "notifications": null,
+    "profile_background_color": "C0DEED",
+    "profile_background_image_url": "http://a0.twimg.com/images/themes/theme1/bg.png",
+    "profile_background_image_url_https": "https://si0.twimg.com/images/themes/theme1/bg.png",
+    "profile_background_tile": false,
+    "profile_image_url": "http://a0.twimg.com/profile_images/2489483541/photo-full_normal.jpg",
+    "profile_image_url_https": "https://si0.twimg.com/profile_images/2489483541/photo-full_normal.jpg",
+    "profile_link_color": "0084B4",
+    "profile_sidebar_border_color": "C0DEED",
+    "profile_sidebar_fill_color": "DDEEF6",
+    "profile_text_color": "333333",
+    "profile_use_background_image": true,
+    "protected": false,
+    "screen_name": "OnRichmondWheel",
+    "show_all_inline_media": false,
+    "statuses_count": 1,
+    "time_zone": null,
+    "url": null,
+    "utc_offset": null,
+    "verified": false
+  }
+}`}
+	//tweet3 = `{"contributors":null,"coordinates":null,"in_reply_to_user_id":null,"truncated":false,"text":"On Richmond's Wheel: The History of Cycling in Richmond by Thomas Houff \u2014 Kickstarter http:\/\/t.co\/QNcHxqT5 via @kickstarter","entities":{"hashtags":[],"urls":[{"display_url":"kck.st\/OYWmRT","indices":[86,106],"expanded_url":"http:\/\/kck.st\/OYWmRT","url":"http:\/\/t.co\/QNcHxqT5"}],"user_mentions":[{"indices":[111,123],"id_str":"16186995","name":"Kickstarter","screen_name":"kickstarter","id":16186995}]},"place":null,"possibly_sensitive_editable":true,"id_str":"233985915146608641","favorited":false,"geo":null,"source":"\u003Ca href=\"http:\/\/twitter.com\/tweetbutton\" rel=\"nofollow\"\u003ETweet Button\u003C\/a\u003E","possibly_sensitive":false,"retweet_count":0,"in_reply_to_status_id_str":null,"in_reply_to_screen_name":null,"created_at":"Fri Aug 10 17:59:24 +0000 2012","in_reply_to_user_id_str":null,"user":{"show_all_inline_media":false,"lang":"en","friends_count":9,"profile_sidebar_border_color":"C0DEED","location":null,"profile_background_image_url_https":"https:\/\/si0.twimg.com\/images\/themes\/theme1\/bg.png","id_str":"749763571","listed_count":0,"profile_use_background_image":true,"profile_image_url_https":"https:\/\/si0.twimg.com\/profile_images\/2489483541\/photo-full_normal.jpg","description":null,"follow_request_sent":null,"following":null,"profile_text_color":"333333","default_profile":true,"profile_background_image_url":"http:\/\/a0.twimg.com\/images\/themes\/theme1\/bg.png","followers_count":0,"is_translator":false,"time_zone":null,"profile_link_color":"0084B4","protected":false,"created_at":"Fri Aug 10 17:45:38 +0000 2012","profile_background_color":"C0DEED","name":"On Richmond's Wheel","default_profile_image":false,"contributors_enabled":false,"statuses_count":1,"geo_enabled":false,"notifications":null,"profile_background_tile":false,"url":null,"profile_image_url":"http:\/\/a0.twimg.com\/profile_images\/2489483541\/photo-full_normal.jpg","screen_name":"OnRichmondWheel","id":749763571,"verified":false,"utc_offset":null,"favourites_count":0,"profile_sidebar_fill_color":"DDEEF6"},"retweeted":false,"in_reply_to_status_id":null,"id":233985915146608641}`
 )
 
 func prettyJson(js string) {
@@ -254,8 +341,8 @@ func prettyJson(js string) {
 func TestDecodeTweet1Test(t *testing.T) {
 	iv := int64(1.6186995e+07)
 	log.Println(strconv.FormatInt(iv, 10))
-	//for i := 0; i < len(tweets); i++ {
-	for i := 0; i < 1; i++ {
+	for i := 0; i < len(tweets); i++ {
+		//for i := 3; i < 4; i++ {
 		tw := Tweet{}
 		err := json.Unmarshal([]byte(tweets[i]), &tw)
 		if err != nil {
