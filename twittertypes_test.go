@@ -321,8 +321,503 @@ var (
     "utc_offset": null,
     "verified": false
   }
+}`, `{
+  "contributors": null,
+  "coordinates": null,
+  "created_at": "Fri Aug 10 18:43:15 +0000 2012",
+  "entities": {
+    "hashtags": null,
+    "media": [
+      {
+        "display_url": "pic.twitter.com/3ndh87QB",
+        "expanded_url": "http://twitter.com/jgmcomics/status/233954362341343232/photo/1",
+        "id": 233954362362314752,
+        "id_str": "233954362362314752",
+        "indices": [
+          109,
+          129
+        ],
+        "media_url": "http://p.twimg.com/Az8sQMZCQAAdYDr.jpg",
+        "media_url_https": "https://p.twimg.com/Az8sQMZCQAAdYDr.jpg",
+        "sizes": {
+          "large": {
+            "h": 763,
+            "resize": "fit",
+            "w": 1024
+          },
+          "medium": {
+            "h": 447,
+            "resize": "fit",
+            "w": 600
+          },
+          "small": {
+            "h": 254,
+            "resize": "fit",
+            "w": 340
+          },
+          "thumb": {
+            "h": 150,
+            "resize": "crop",
+            "w": 150
+          }
+        },
+        "source_status_id": 233954362341343232,
+        "source_status_id_str": "233954362341343232",
+        "type": "photo",
+        "url": "http://t.co/3ndh87QB"
+      }
+    ],
+    "urls": [
+      {
+        "display_url": "kickstarter.com/projects/jgmco…",
+        "expanded_url": "http://www.kickstarter.com/projects/jgmcomics/the-mighty-titan",
+        "indices": [
+          88,
+          108
+        ],
+        "url": "http://t.co/BRJihBG9"
+      }
+    ],
+    "user_mentions": [
+      {
+        "id": 80970494,
+        "id_str": "80970494",
+        "indices": [
+          3,
+          13
+        ],
+        "name": "Joe Martino",
+        "screen_name": "jgmcomics"
+      },
+      {
+        "id": 89914089,
+        "id_str": "89914089",
+        "indices": [
+          54,
+          70
+        ],
+        "name": "Chris Giarrusso",
+        "screen_name": "Chris_Giarrusso"
+      },
+      {
+        "id": 339473364,
+        "id_str": "339473364",
+        "indices": [
+          75,
+          87
+        ],
+        "name": "Jerry Ordway",
+        "screen_name": "JerryOrdway"
+      }
+    ]
+  },
+  "favorited": false,
+  "geo": null,
+  "id": 233996952881221632,
+  "id_str": "233996952881221632",
+  "in_reply_to_screen_name": null,
+  "in_reply_to_status_id": null,
+  "in_reply_to_status_id_str": null,
+  "in_reply_to_user_id": null,
+  "in_reply_to_user_id_str": null,
+  "place": null,
+  "possibly_sensitive": false,
+  "possibly_sensitive_editable": true,
+  "retweet_count": 1,
+  "retweeted": false,
+  "retweeted_status": {
+    "contributors": null,
+    "coordinates": null,
+    "created_at": "Fri Aug 10 15:54:03 +0000 2012",
+    "entities": {
+      "hashtags": null,
+      "media": [
+        {
+          "display_url": "pic.twitter.com/3ndh87QB",
+          "expanded_url": "http://twitter.com/jgmcomics/status/233954362341343232/photo/1",
+          "id": 233954362362314752,
+          "id_str": "233954362362314752",
+          "indices": [
+            94,
+            114
+          ],
+          "media_url": "http://p.twimg.com/Az8sQMZCQAAdYDr.jpg",
+          "media_url_https": "https://p.twimg.com/Az8sQMZCQAAdYDr.jpg",
+          "sizes": {
+            "large": {
+              "h": 763,
+              "resize": "fit",
+              "w": 1024
+            },
+            "medium": {
+              "h": 447,
+              "resize": "fit",
+              "w": 600
+            },
+            "small": {
+              "h": 254,
+              "resize": "fit",
+              "w": 340
+            },
+            "thumb": {
+              "h": 150,
+              "resize": "crop",
+              "w": 150
+            }
+          },
+          "type": "photo",
+          "url": "http://t.co/3ndh87QB"
+        }
+      ],
+      "urls": [
+        {
+          "display_url": "kickstarter.com/projects/jgmco…",
+          "expanded_url": "http://www.kickstarter.com/projects/jgmcomics/the-mighty-titan",
+          "indices": [
+            73,
+            93
+          ],
+          "url": "http://t.co/BRJihBG9"
+        }
+      ],
+      "user_mentions": [
+        {
+          "id": 8.9914089e+07,
+          "id_str": "89914089",
+          "indices": [
+            39,
+            55
+          ],
+          "name": "Chris Giarrusso",
+          "screen_name": "Chris_Giarrusso"
+        },
+        {
+          "id": 339473364,
+          "id_str": "339473364",
+          "indices": [
+            60,
+            72
+          ],
+          "name": "Jerry Ordway",
+          "screen_name": "JerryOrdway"
+        }
+      ]
+    },
+    "favorited": false,
+    "geo": null,
+    "id": 233954362341343232,
+    "id_str": "233954362341343232",
+    "in_reply_to_screen_name": null,
+    "in_reply_to_status_id": null,
+    "in_reply_to_status_id_str": null,
+    "in_reply_to_user_id": null,
+    "in_reply_to_user_id_str": null,
+    "place": null,
+    "possibly_sensitive": false,
+    "possibly_sensitive_editable": true,
+    "retweet_count": 1,
+    "retweeted": false,
+    "source": "web",
+    "text": "2 great tastes that go great together! @Chris_Giarrusso and @JerryOrdway http://t.co/BRJihBG9 http://t.co/3ndh87QB",
+    "truncated": false,
+    "user": {
+      "contributors_enabled": false,
+      "created_at": "Thu Oct 08 23:21:23 +0000 2009",
+      "default_profile": false,
+      "default_profile_image": false,
+      "description": "Tattooed IT guy by day, two time cancer survivor, father of 2 great kids. I am the creator of the comicbook heroes Shadowflame, Ripperman and #TheMightyTitan!",
+      "favourites_count": 134,
+      "follow_request_sent": null,
+      "followers_count": 2173,
+      "following": null,
+      "friends_count": 2391,
+      "geo_enabled": false,
+      "id": 80970494,
+      "id_str": "80970494",
+      "is_translator": false,
+      "lang": "en",
+      "listed_count": 48,
+      "location": "The land of New Jersey. ",
+      "name": "Joe Martino",
+      "notifications": null,
+      "profile_background_color": "1A1B1F",
+      "profile_background_image_url": "http://a0.twimg.com/profile_background_images/202682843/bg.jpg",
+      "profile_background_image_url_https": "https://si0.twimg.com/profile_background_images/202682843/bg.jpg",
+      "profile_background_tile": true,
+      "profile_image_url": "http://a0.twimg.com/profile_images/2436119900/zgkr8o1fwx9tmjikbai2_normal.jpeg",
+      "profile_image_url_https": "https://si0.twimg.com/profile_images/2436119900/zgkr8o1fwx9tmjikbai2_normal.jpeg",
+      "profile_link_color": "FA0000",
+      "profile_sidebar_border_color": "000000",
+      "profile_sidebar_fill_color": "000000",
+      "profile_text_color": "FFF7FF",
+      "profile_use_background_image": true,
+      "protected": false,
+      "screen_name": "jgmcomics",
+      "show_all_inline_media": true,
+      "statuses_count": 11669,
+      "time_zone": "Bogota",
+      "url": "http://www.kickstarter.com/projects/jgmcomics/the-mighty-titan",
+      "utc_offset": -18000,
+      "verified": false
+    }
+  },
+  "source": "\u003ca href=\"http://twitter.com/download/iphone\" rel=\"nofollow\"\u003eTwitter for iPhone\u003c/a\u003e",
+  "text": "RT @jgmcomics: 2 great tastes that go great together! @Chris_Giarrusso and @JerryOrdway http://t.co/BRJihBG9 http://t.co/3ndh87QB",
+  "truncated": false,
+  "user": {
+    "contributors_enabled": false,
+    "created_at": "Sun Apr 10 15:15:00 +0000 2011",
+    "default_profile": false,
+    "default_profile_image": false,
+    "description": "Writer. Father. Husband. Brother. Dreamer. Pirate. Rock star. Robot. Kung Fu Ninja. http://www.kickstarter.com/projects/mdreynolds/max-spencer-space-inventor",
+    "favourites_count": 4,
+    "follow_request_sent": null,
+    "followers_count": 414,
+    "following": null,
+    "friends_count": 745,
+    "geo_enabled": false,
+    "id": 280063014,
+    "id_str": "280063014",
+    "is_translator": false,
+    "lang": "en",
+    "listed_count": 19,
+    "location": "Lewisburg, TN",
+    "name": "Michael Reynolds",
+    "notifications": null,
+    "profile_background_color": "001329",
+    "profile_background_image_url": "http://a0.twimg.com/profile_background_images/263169842/x7a2107434b05a4870c3b9f8fd628562.jpg",
+    "profile_background_image_url_https": "https://si0.twimg.com/profile_background_images/263169842/x7a2107434b05a4870c3b9f8fd628562.jpg",
+    "profile_background_tile": false,
+    "profile_image_url": "http://a0.twimg.com/profile_images/1306772734/5720_1089193364042_1652727140_30291055_1025638_n_normal.jpg",
+    "profile_image_url_https": "https://si0.twimg.com/profile_images/1306772734/5720_1089193364042_1652727140_30291055_1025638_n_normal.jpg",
+    "profile_link_color": "448668",
+    "profile_sidebar_border_color": "F7B565",
+    "profile_sidebar_fill_color": "000B17",
+    "profile_text_color": "004358",
+    "profile_use_background_image": true,
+    "protected": false,
+    "screen_name": "m_d_reynolds",
+    "show_all_inline_media": false,
+    "statuses_count": 883,
+    "time_zone": "Central Time (US & Canada)",
+    "url": null,
+    "utc_offset": -21600,
+    "verified": false
+  }
+}`, `{
+  "contributors": null,
+  "coordinates": null,
+  "created_at": "Sat Aug 11 20:54:36 +0000 2012",
+  "entities": {
+    "hashtags": null,
+    "urls": [
+      {
+        "expanded_url": null,
+        "indices": [
+          124,
+          136
+        ],
+        "url": "http://t.co/"
+      }
+    ],
+    "user_mentions": [
+      {
+        "id": 64794579,
+        "id_str": "64794579",
+        "indices": [
+          3,
+          17
+        ],
+        "name": "Inward Facing Girl",
+        "screen_name": "melaniebiehle"
+      },
+      {
+        "id": 16186995,
+        "id_str": "16186995",
+        "indices": [
+          64,
+          76
+        ],
+        "name": "Kickstarter",
+        "screen_name": "kickstarter"
+      },
+      {
+        "id": 15248224,
+        "id_str": "15248224",
+        "indices": [
+          88,
+          95
+        ],
+        "name": "Natalie Baack",
+        "screen_name": "nab717"
+      }
+    ]
+  },
+  "favorited": false,
+  "geo": null,
+  "id": 234392395985334272,
+  "id_str": "234392395985334272",
+  "in_reply_to_screen_name": null,
+  "in_reply_to_status_id": null,
+  "in_reply_to_status_id_str": null,
+  "in_reply_to_user_id": null,
+  "in_reply_to_user_id_str": null,
+  "place": null,
+  "possibly_sensitive": false,
+  "possibly_sensitive_editable": true,
+  "retweet_count": 0,
+  "retweeted": false,
+  "retweeted_status": {
+    "contributors": null,
+    "coordinates": null,
+    "created_at": "Sat Aug 11 20:53:22 +0000 2012",
+    "entities": {
+      "hashtags": [
+        {
+          "indices": [
+            126,
+            135
+          ],
+          "text": "vivarium"
+        }
+      ],
+      "urls": [
+        {
+          "display_url": "kck.st/LVTCGk",
+          "expanded_url": "http://kck.st/LVTCGk",
+          "indices": [
+            105,
+            125
+          ],
+          "url": "http://t.co/SsbgFpSu"
+        }
+      ],
+      "user_mentions": [
+        {
+          "id": 16186995,
+          "id_str": "16186995",
+          "indices": [
+            45,
+            57
+          ],
+          "name": "Kickstarter",
+          "screen_name": "kickstarter"
+        },
+        {
+          "id": 15248224,
+          "id_str": "15248224",
+          "indices": [
+            69,
+            76
+          ],
+          "name": "Natalie Baack",
+          "screen_name": "nab717"
+        }
+      ]
+    },
+    "favorited": false,
+    "geo": null,
+    "id": 234392085426483200,
+    "id_str": "234392085426483200",
+    "in_reply_to_screen_name": null,
+    "in_reply_to_status_id": null,
+    "in_reply_to_status_id_str": null,
+    "in_reply_to_user_id": null,
+    "in_reply_to_user_id_str": null,
+    "place": null,
+    "possibly_sensitive": false,
+    "possibly_sensitive_editable": true,
+    "retweet_count": 0,
+    "retweeted": false,
+    "source": "\u003ca href=\"http://twitter.com/tweetbutton\" rel=\"nofollow\"\u003eTweet Button\u003c/a\u003e",
+    "text": "I just backed Vivarium: A Sci-Fi Thriller on @Kickstarter. My friend @nab717 is producing. Can you help? http://t.co/SsbgFpSu #vivarium",
+    "truncated": false,
+    "user": {
+      "contributors_enabled": false,
+      "created_at": "Tue Aug 11 19:18:01 +0000 2009",
+      "default_profile": false,
+      "default_profile_image": false,
+      "description": "Blogger, photographer, graphic designer, social media and content marketing consultant at Inward Facing Girl. ",
+      "favourites_count": 39,
+      "follow_request_sent": null,
+      "followers_count": 1153,
+      "following": null,
+      "friends_count": 1635,
+      "geo_enabled": true,
+      "id": 64794579,
+      "id_str": "64794579",
+      "is_translator": false,
+      "lang": "en",
+      "listed_count": 66,
+      "location": "Seattle, WA",
+      "name": "Inward Facing Girl",
+      "notifications": null,
+      "profile_background_color": "FFFFFF",
+      "profile_background_image_url": "http://a0.twimg.com/profile_background_images/538372796/ifg-logo-4-28-2012-twitter-background.png",
+      "profile_background_image_url_https": "https://si0.twimg.com/profile_background_images/538372796/ifg-logo-4-28-2012-twitter-background.png",
+      "profile_background_tile": false,
+      "profile_image_url": "http://a0.twimg.com/profile_images/2277637761/hxddiot07gun6n3yynb4_normal.jpeg",
+      "profile_image_url_https": "https://si0.twimg.com/profile_images/2277637761/hxddiot07gun6n3yynb4_normal.jpeg",
+      "profile_link_color": "ED4624",
+      "profile_sidebar_border_color": "CCD0D0",
+      "profile_sidebar_fill_color": "FFFFFF",
+      "profile_text_color": "333333",
+      "profile_use_background_image": true,
+      "protected": false,
+      "screen_name": "melaniebiehle",
+      "show_all_inline_media": true,
+      "statuses_count": 8962,
+      "time_zone": "Pacific Time (US & Canada)",
+      "url": "http://www.inwardfacinggirl.com",
+      "utc_offset": -28800,
+      "verified": false
+    }
+  },
+  "source": "web",
+  "text": "RT @melaniebiehle: I just backed Vivarium: A Sci-Fi Thriller on @Kickstarter. My friend @nab717 is producing. Can you help? http://t.co/ ...",
+  "truncated": true,
+  "user": {
+    "contributors_enabled": false,
+    "created_at": "Thu Jun 26 21:04:00 +0000 2008",
+    "default_profile": false,
+    "default_profile_image": false,
+    "description": "Canadian born. Movie market researcher and analyst. Indie film producer (Vivarium currently live on Kickstarter - entervivarium.com). Echo Park dweller. ",
+    "favourites_count": 2,
+    "follow_request_sent": null,
+    "followers_count": 247,
+    "following": null,
+    "friends_count": 558,
+    "geo_enabled": true,
+    "id": 15248224,
+    "id_str": "15248224",
+    "is_translator": false,
+    "lang": "en",
+    "listed_count": 1,
+    "location": "Los Angeles",
+    "name": "Natalie Baack",
+    "notifications": null,
+    "profile_background_color": "EDECE9",
+    "profile_background_image_url": "http://a0.twimg.com/images/themes/theme3/bg.gif",
+    "profile_background_image_url_https": "https://si0.twimg.com/images/themes/theme3/bg.gif",
+    "profile_background_tile": false,
+    "profile_image_url": "http://a0.twimg.com/profile_images/2486263694/eujyqzw08o5hlfvbz1bd_normal.jpeg",
+    "profile_image_url_https": "https://si0.twimg.com/profile_images/2486263694/eujyqzw08o5hlfvbz1bd_normal.jpeg",
+    "profile_link_color": "088253",
+    "profile_sidebar_border_color": "D3D2CF",
+    "profile_sidebar_fill_color": "E3E2DE",
+    "profile_text_color": "634047",
+    "profile_use_background_image": true,
+    "protected": false,
+    "screen_name": "nab717",
+    "show_all_inline_media": false,
+    "statuses_count": 781,
+    "time_zone": "Pacific Time (US & Canada)",
+    "url": "http://entervivarium.com",
+    "utc_offset": -28800,
+    "verified": false
+  }
 }`}
-	//tweet3 = `{"contributors":null,"coordinates":null,"in_reply_to_user_id":null,"truncated":false,"text":"On Richmond's Wheel: The History of Cycling in Richmond by Thomas Houff \u2014 Kickstarter http:\/\/t.co\/QNcHxqT5 via @kickstarter","entities":{"hashtags":[],"urls":[{"display_url":"kck.st\/OYWmRT","indices":[86,106],"expanded_url":"http:\/\/kck.st\/OYWmRT","url":"http:\/\/t.co\/QNcHxqT5"}],"user_mentions":[{"indices":[111,123],"id_str":"16186995","name":"Kickstarter","screen_name":"kickstarter","id":16186995}]},"place":null,"possibly_sensitive_editable":true,"id_str":"233985915146608641","favorited":false,"geo":null,"source":"\u003Ca href=\"http:\/\/twitter.com\/tweetbutton\" rel=\"nofollow\"\u003ETweet Button\u003C\/a\u003E","possibly_sensitive":false,"retweet_count":0,"in_reply_to_status_id_str":null,"in_reply_to_screen_name":null,"created_at":"Fri Aug 10 17:59:24 +0000 2012","in_reply_to_user_id_str":null,"user":{"show_all_inline_media":false,"lang":"en","friends_count":9,"profile_sidebar_border_color":"C0DEED","location":null,"profile_background_image_url_https":"https:\/\/si0.twimg.com\/images\/themes\/theme1\/bg.png","id_str":"749763571","listed_count":0,"profile_use_background_image":true,"profile_image_url_https":"https:\/\/si0.twimg.com\/profile_images\/2489483541\/photo-full_normal.jpg","description":null,"follow_request_sent":null,"following":null,"profile_text_color":"333333","default_profile":true,"profile_background_image_url":"http:\/\/a0.twimg.com\/images\/themes\/theme1\/bg.png","followers_count":0,"is_translator":false,"time_zone":null,"profile_link_color":"0084B4","protected":false,"created_at":"Fri Aug 10 17:45:38 +0000 2012","profile_background_color":"C0DEED","name":"On Richmond's Wheel","default_profile_image":false,"contributors_enabled":false,"statuses_count":1,"geo_enabled":false,"notifications":null,"profile_background_tile":false,"url":null,"profile_image_url":"http:\/\/a0.twimg.com\/profile_images\/2489483541\/photo-full_normal.jpg","screen_name":"OnRichmondWheel","id":749763571,"verified":false,"utc_offset":null,"favourites_count":0,"profile_sidebar_fill_color":"DDEEF6"},"retweeted":false,"in_reply_to_status_id":null,"id":233985915146608641}`
+	//tweet3 = `{"contributors":null,"coordinates":null,"in_reply_to_user_id":null,"truncated":true,"text":"RT @melaniebiehle: I just backed Vivarium: A Sci-Fi Thriller on @Kickstarter. My friend @nab717 is producing. Can you help? http:\/\/t.co\/ ...","entities":{"hashtags":[],"urls":[{"indices":[124,136],"expanded_url":null,"url":"http:\/\/t.co\/"}],"user_mentions":[{"indices":[3,17],"id_str":"64794579","name":"Inward Facing Girl","screen_name":"melaniebiehle","id":64794579},{"indices":[64,76],"id_str":"16186995","name":"Kickstarter","screen_name":"kickstarter","id":16186995},{"indices":[88,95],"id_str":"15248224","name":"Natalie Baack","screen_name":"nab717","id":15248224}]},"place":null,"possibly_sensitive_editable":true,"id_str":"234392395985334272","retweeted_status":{"contributors":null,"coordinates":null,"in_reply_to_user_id":null,"truncated":false,"text":"I just backed Vivarium: A Sci-Fi Thriller on @Kickstarter. My friend @nab717 is producing. Can you help? http:\/\/t.co\/SsbgFpSu #vivarium","entities":{"hashtags":[{"text":"vivarium","indices":[126,135]}],"urls":[{"display_url":"kck.st\/LVTCGk","indices":[105,125],"expanded_url":"http:\/\/kck.st\/LVTCGk","url":"http:\/\/t.co\/SsbgFpSu"}],"user_mentions":[{"indices":[45,57],"id_str":"16186995","name":"Kickstarter","screen_name":"kickstarter","id":16186995},{"indices":[69,76],"id_str":"15248224","name":"Natalie Baack","screen_name":"nab717","id":15248224}]},"place":null,"possibly_sensitive_editable":true,"id_str":"234392085426483200","favorited":false,"geo":null,"source":"\u003Ca href=\"http:\/\/twitter.com\/tweetbutton\" rel=\"nofollow\"\u003ETweet Button\u003C\/a\u003E","possibly_sensitive":false,"retweet_count":0,"in_reply_to_status_id_str":null,"in_reply_to_screen_name":null,"created_at":"Sat Aug 11 20:53:22 +0000 2012","in_reply_to_user_id_str":null,"user":{"show_all_inline_media":true,"lang":"en","friends_count":1635,"profile_sidebar_border_color":"CCD0D0","location":"Seattle, WA","profile_background_image_url_https":"https:\/\/si0.twimg.com\/profile_background_images\/538372796\/ifg-logo-4-28-2012-twitter-background.png","id_str":"64794579","listed_count":66,"profile_use_background_image":true,"profile_image_url_https":"https:\/\/si0.twimg.com\/profile_images\/2277637761\/hxddiot07gun6n3yynb4_normal.jpeg","description":"Blogger, photographer, graphic designer, social media and content marketing consultant at Inward Facing Girl. ","follow_request_sent":null,"following":null,"profile_text_color":"333333","default_profile":false,"profile_background_image_url":"http:\/\/a0.twimg.com\/profile_background_images\/538372796\/ifg-logo-4-28-2012-twitter-background.png","followers_count":1153,"is_translator":false,"time_zone":"Pacific Time (US & Canada)","profile_link_color":"ED4624","protected":false,"created_at":"Tue Aug 11 19:18:01 +0000 2009","profile_background_color":"FFFFFF","name":"Inward Facing Girl","default_profile_image":false,"contributors_enabled":false,"statuses_count":8962,"geo_enabled":true,"notifications":null,"profile_background_tile":false,"url":"http:\/\/www.inwardfacinggirl.com","profile_image_url":"http:\/\/a0.twimg.com\/profile_images\/2277637761\/hxddiot07gun6n3yynb4_normal.jpeg","screen_name":"melaniebiehle","id":64794579,"verified":false,"utc_offset":-28800,"favourites_count":39,"profile_sidebar_fill_color":"FFFFFF"},"retweeted":false,"in_reply_to_status_id":null,"id":234392085426483200},"favorited":false,"geo":null,"source":"web","possibly_sensitive":false,"retweet_count":0,"in_reply_to_status_id_str":null,"in_reply_to_screen_name":null,"created_at":"Sat Aug 11 20:54:36 +0000 2012","in_reply_to_user_id_str":null,"user":{"show_all_inline_media":false,"lang":"en","friends_count":558,"profile_sidebar_border_color":"D3D2CF","location":"Los Angeles","profile_background_image_url_https":"https:\/\/si0.twimg.com\/images\/themes\/theme3\/bg.gif","id_str":"15248224","listed_count":1,"profile_use_background_image":true,"profile_image_url_https":"https:\/\/si0.twimg.com\/profile_images\/2486263694\/eujyqzw08o5hlfvbz1bd_normal.jpeg","description":"Canadian born. Movie market researcher and analyst. Indie film producer (Vivarium currently live on Kickstarter - entervivarium.com). Echo Park dweller. ","follow_request_sent":null,"following":null,"profile_text_color":"634047","default_profile":false,"profile_background_image_url":"http:\/\/a0.twimg.com\/images\/themes\/theme3\/bg.gif","followers_count":247,"is_translator":false,"time_zone":"Pacific Time (US & Canada)","profile_link_color":"088253","protected":false,"created_at":"Thu Jun 26 21:04:00 +0000 2008","profile_background_color":"EDECE9","name":"Natalie Baack","default_profile_image":false,"contributors_enabled":false,"statuses_count":781,"geo_enabled":true,"notifications":null,"profile_background_tile":false,"url":"http:\/\/entervivarium.com","profile_image_url":"http:\/\/a0.twimg.com\/profile_images\/2486263694\/eujyqzw08o5hlfvbz1bd_normal.jpeg","screen_name":"nab717","id":15248224,"verified":false,"utc_offset":-28800,"favourites_count":2,"profile_sidebar_fill_color":"E3E2DE"},"retweeted":false,"in_reply_to_status_id":null,"id":234392395985334272}`
 )
 
 func prettyJson(js string) {

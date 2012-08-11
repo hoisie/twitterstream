@@ -121,7 +121,9 @@ func (t *Tweet) Urls() []string {
 	if len(t.Entities.Urls) > 0 {
 		urls := make([]string, 0)
 		for _, u := range t.Entities.Urls {
-			urls = append(urls, u.Expanded_url)
+			if len(u.Expanded_url) > 0 {
+				urls = append(urls, string(u.Expanded_url))
+			}
 		}
 		return urls
 	}
@@ -196,7 +198,7 @@ type Hashtag struct {
 }
 type TwitterUrl struct {
 	Url          string
-	Expanded_url string
+	Expanded_url StringNullable
 	Display_url  string
 	Indices      []int
 }
@@ -219,20 +221,20 @@ type Media struct {
 	Url             string
 	Type            string
 	Screen_name     string
-	Sizes           []Sizes
+	Sizes           Sizes
 }
 
 type Sizes struct {
-	large  Dimensions
-	medium Dimensions
-	small  Dimensions
-	thumb  Dimensions
+	Large  Dimensions
+	Medium Dimensions
+	Small  Dimensions
+	Thumb  Dimensions
 }
 
 type Dimensions struct {
-	w      int
-	resize string
-	h      int
+	W      int
+	Resize string
+	H      int
 }
 
 type FriendList struct {
