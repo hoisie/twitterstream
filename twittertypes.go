@@ -3,57 +3,8 @@ package httpstream
 import (
 	"bytes"
 	"encoding/json"
-	"strconv"
+	"net/url"
 )
-
-// details about all the nullable types http://code.google.com/p/go/issues/detail?id=2540
-
-type Int64Nullable int64
-
-func (i Int64Nullable) UnmarshalJSON(data []byte) error {
-	if len(data) > 0 {
-		//ParseInt(s string, base int, bitSize int) (i int64, err error)
-		if in, err := strconv.ParseInt(string(data), 10, 64); err == nil {
-			i = Int64Nullable(in)
-		}
-
-	}
-	return nil
-}
-
-type IntNullable int
-
-func (i IntNullable) UnmarshalJSON(data []byte) error {
-	if len(data) > 0 {
-		//ParseInt(s string, base int, bitSize int) (i int64, err error)
-		if in, err := strconv.ParseInt(string(data), 10, 32); err == nil {
-			i = IntNullable(in)
-		}
-
-	}
-	return nil
-}
-
-type StringNullable string
-
-func (s StringNullable) UnmarshalJSON(data []byte) error {
-	if len(data) > 0 {
-		s = StringNullable(string(data))
-	}
-	return nil
-}
-
-type BoolNullable bool
-
-func (b BoolNullable) UnmarshalJSON(data []byte) error {
-	if len(data) > 0 {
-		//ParseBool(str string) (value bool, err error)
-		if bo, err := strconv.ParseBool(string(data)); err == nil {
-			b = BoolNullable(bo)
-		}
-	}
-	return nil
-}
 
 type User struct {
 	Id                           int64
@@ -121,8 +72,10 @@ func (t *Tweet) Urls() []string {
 	if len(t.Entities.Urls) > 0 {
 		urls := make([]string, 0)
 		for _, u := range t.Entities.Urls {
-			if len(u.Expanded_url) > 0 {
-				urls = append(urls, string(u.Expanded_url))
+			if len(string(u.Expanded_url)) > 0 {
+				if eu, err := url.QueryUnescape(string(u.Expanded_url)); err == nil {
+					urls = append(urls, eu)
+				}
 			}
 		}
 		return urls

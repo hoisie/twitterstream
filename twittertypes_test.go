@@ -4,9 +4,14 @@ import (
 	"encoding/json"
 	//"github.com/bsdf/twitter"
 	"log"
+	"os"
 	"strconv"
 	"testing"
 )
+
+func init() {
+	SetLogger(log.New(os.Stdout, "", log.Ltime|log.Lshortfile), "debug")
+}
 
 var (
 	tweets = []string{`{
@@ -833,7 +838,28 @@ func prettyJson(js string) {
 	}
 }
 
+func TestNullableString(t *testing.T) {
+	m := make(map[string]StringNullable)
+	var valid bool
+	js := `{"url":"http:\/\/a0.twimg.com\/images\/themes\/theme14\/bg.gif"}`
+	if err := json.Unmarshal([]byte(js), &m); err == nil {
+		if string(m["url"]) == "http://a0.twimg.com/images/themes/theme14/bg.gif" {
+			valid = true
+		}
+	}
+	//Debug(m)
+	if !valid {
+		t.Fail()
+	}
+	m = make(map[string]StringNullable)
+	js = `{"url":null}`
+	if err := json.Unmarshal([]byte(js), &m); err != nil {
+		t.Fail()
+	}
+}
+
 func TestDecodeTweet1Test(t *testing.T) {
+	twlist := make([]Tweet, 0)
 	iv := int64(1.6186995e+07)
 	log.Println(strconv.FormatInt(iv, 10))
 	for i := 0; i < len(tweets); i++ {
@@ -845,7 +871,17 @@ func TestDecodeTweet1Test(t *testing.T) {
 			log.Println(tweets[i][0:100])
 		}
 		log.Println(i, " ", err)
+		twlist = append(twlist, tw)
 	}
+	twx := twlist[1]
+	for _, url := range twx.Urls() {
+		Debug(url)
+	}
+	twx = twlist[1]
+	u := twx.Entities.Urls[0]
+	log.Println(twx.Urls())
+	log.Println(u.Expanded_url)
+
 	//prettyJson(tweet3)
 	//tw2 := twitter.Tweet{}
 	//err = json.Unmarshal([]byte(tweet2), &tw2)

@@ -1,26 +1,3 @@
-/*
-Usage of logging utilities
-
-	var logLevel *string = flag.String("logging", "debug", "Which log level: [debug,info,warn,error,fatal]")
-	
-	func main() {
-
-		flag.Parse()
-		sa.SetLogger(log.New(os.Stdout, "", log.Ltime|log.Lshortfile), *logLevel)
-		
-	}
-
-	func yourfunc() {
-
-	  Debug("message", myStruct)
-
-	  Log(ERROR, "my message", myStruct, 22)
-
-	  Logf(INFO, "my message %v,  %d", myStruct, 22)
-
-	}
-*/
-
 package httpstream
 
 import (
@@ -36,12 +13,19 @@ const (
 	DEBUG = 4
 )
 
-var LogLevel int = ERROR
+var (
+	LogLevel      int = ERROR
+	logger        *log.Logger
+	LogLevelWords map[string]int = map[string]int{"fatal": 0, "error": 1, "warn": 2, "info": 3, "debug": 4, "none": -1}
+)
 
-var logger *log.Logger
-
-var LogLevelWords map[string]int = map[string]int{"fatal": 0, "error": 1, "warn": 2, "info": 3, "debug": 4, "none":-1}
-
+// set the logger to use, normal usage:
+//
+//		var logLevel *string = flag.String("logging", "debug", "Which log level: [debug,info,warn,error,fatal]")
+//
+//		func init() {
+//			SetLogger(log.New(os.Stdout, "", log.Ltime|log.Lshortfile), "debug")
+//		}
 func SetLogger(l *log.Logger, logLevel string) {
 	logger = l
 	LogLevelSet(logLevel)
