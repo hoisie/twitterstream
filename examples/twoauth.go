@@ -38,12 +38,13 @@ func main() {
 		ConsumerKey:      *ck,
 		ConsumerSecret:   *cs,
 		CallBackURL:      "oob",
+		UserAgent:        "go/httpstream",
 	}
 
 	//at := goauthcon.GetAccessToken(rt.Token, pin)
 	at := oauth.AccessToken{Id: "",
 		Token:    *ot,
-		Secret:   *os,
+		Secret:   *osec,
 		UserRef:  *user,
 		Verifier: "",
 		Service:  "twitter",

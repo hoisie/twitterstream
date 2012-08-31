@@ -19,6 +19,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -334,30 +335,21 @@ Return:
 //		cl.Filter([]int64{1,2,3,4},[]string{"golang"}, false, done )
 //
 func (c *Client) Filter(userids []int64, topics []string, watchStalls bool, done chan bool) error {
-	var body bytes.Buffer
 
-	params := map[string]string{"stall_warnings": "true"}
+	params := make(map[string]string)
+	params["stall_warnings"] = "true"
 	if userids != nil && len(userids) > 0 {
-
-		for i, id := range userids {
-			body.WriteString(strconv.FormatInt(id, 10))
-			if i != len(userids)-1 {
-				body.WriteString(",")
-			}
+		users := make([]string, 0)
+		for _, id := range userids {
+			users = append(users, strconv.FormatInt(id, 10))
 		}
+		params["follow"] = strings.Join(users, ",")
 	}
-	params["follow"] = body.String()
-	body.Reset()
 
 	if topics != nil && len(topics) > 0 {
-		for i, topic := range topics {
-			body.WriteString(topic)
-			if i != len(topics)-1 {
-				body.WriteString(",")
-			}
-		}
+		params["track"] = strings.Join(topics, ",")
 	}
-	params["track"] = body.String()
+
 	if watchStalls {
 		c.Handler = StallWatcher(c.Handler)
 	}
