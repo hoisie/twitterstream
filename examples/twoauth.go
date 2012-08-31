@@ -1,16 +1,22 @@
 package main
 
+// twitter oauth
+
 import (
 	"flag"
+	oauth "github.com/akrennmair/goauth"
 	"github.com/araddon/httpstream"
 	"log"
 	"os"
+	"strings"
 )
 
 var (
-	pwd      *string = flag.String("pwd", "password", "Password")
-	user     *string = flag.String("user", "username", "username")
-	track    *string = flag.String("track", "", "Twitter terms to track")
+	user     *string = flag.String("user", "", "twitter username")
+	ck       *string = flag.String("ck", "", "Consumer Key")
+	cs       *string = flag.String("cs", "", "Consumer Secret")
+	ot       *string = flag.String("ot", "", "Oauth Token")
+	osec     *string = flag.String("os", "", "OAuthTokenSecret")
 	logLevel *string = flag.String("logging", "debug", "Which log level: [debug,info,warn,error,fatal]")
 )
 
@@ -24,10 +30,28 @@ func main() {
 	stream := make(chan []byte, 1000)
 	done := make(chan bool)
 
+	httpstream.OauthCon = &oauth.OAuthConsumer{
+		Service:          "twitter",
+		RequestTokenURL:  "http://twitter.com/oauth/request_token",
+		AccessTokenURL:   "http://twitter.com/oauth/access_token",
+		AuthorizationURL: "http://twitter.com/oauth/authorize",
+		ConsumerKey:      *ck,
+		ConsumerSecret:   *cs,
+		CallBackURL:      "oob",
+	}
+
+	//at := goauthcon.GetAccessToken(rt.Token, pin)
+	at := oauth.AccessToken{Id: "",
+		Token:    *ot,
+		Secret:   *os,
+		UserRef:  *user,
+		Verifier: "",
+		Service:  "twitter",
+	}
 	// the stream listener effectively operates in one "thread"/goroutine
 	// as the httpstream Client processes inside a go routine it opens
 	// That includes the handler func we pass in here
-	client := httpstream.NewBasicAuthClient(*user, *pwd, httpstream.OnlyTweetsFilter(func(line []byte) {
+	client := httpstream.NewOAuthClient(&at, httpstream.OnlyTweetsFilter(func(line []byte) {
 		stream <- line
 		// although you can do heavy lifting here, it means you are doing all
 		// your work in the same thread as the http streaming/listener
@@ -35,7 +59,8 @@ func main() {
 		// different thread/goroutine
 	}))
 
-	err := client.Sample(done)
+	keywords := strings.Split("android,golang,zeromq,javascript", ",")
+	err := client.Filter([]int64{14230524, 783214}, keywords, false, done)
 	if err != nil {
 		httpstream.Log(httpstream.ERROR, err.Error())
 	} else {

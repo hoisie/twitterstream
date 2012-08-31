@@ -13,6 +13,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"errors"
+	oauth "github.com/akrennmair/goauth"
 	"io"
 	"log"
 	"net/http"
@@ -21,12 +22,14 @@ import (
 	"time"
 )
 
-var filterUrl, _ = url.Parse("https://stream.twitter.com/1/statuses/filter.json")
-var sampleUrl, _ = url.Parse("https://stream.twitter.com/1/statuses/sample.json")
-var userUrl, _ = url.Parse("https://userstream.twitter.com/2/user.json")
-var siteStreamUrl, _ = url.Parse("https://sitestream.twitter.com/2b/site.json")
-
-var retryTimeout time.Duration = time.Second * 10
+var (
+	filterUrl, _                   = url.Parse("https://stream.twitter.com/1/statuses/filter.json")
+	sampleUrl, _                   = url.Parse("https://stream.twitter.com/1/statuses/sample.json")
+	userUrl, _                     = url.Parse("https://userstream.twitter.com/2/user.json")
+	siteStreamUrl, _               = url.Parse("https://sitestream.twitter.com/2b/site.json")
+	retryTimeout     time.Duration = time.Second * 10
+	OauthCon         *oauth.OAuthConsumer
+)
 
 func init() {
 	log.SetFlags(log.Ltime | log.Lshortfile | log.Lmicroseconds)
@@ -35,14 +38,17 @@ func init() {
 type streamConn struct {
 	client   *http.Client
 	url      *url.URL
+	at       *oauth.AccessToken
 	authData string
 	postData string
 	stale    bool
+	closed   bool
 	// wait time before trying to reconnect, this will be 
 	// exponentially moved up until reaching maxWait, when
 	// it will exit
 	wait    int
 	maxWait int
+	connect func() (*http.Response, error)
 }
 
 func NewStreamConn(max int) streamConn {
@@ -54,9 +60,10 @@ func NewStreamConn(max int) streamConn {
 func (conn *streamConn) Close() {
 	// Just mark the connection as stale, and let the connect() handler close after a read
 	conn.stale = true
+	conn.closed = true
 }
 
-func (conn *streamConn) connect() (*http.Response, error) {
+func basicauthConnect(conn *streamConn) (*http.Response, error) {
 	if conn.stale {
 		return nil, errors.New("Stale connection")
 	}
@@ -68,7 +75,7 @@ func (conn *streamConn) connect() (*http.Response, error) {
 	req.Method = "GET"
 	req.Header = http.Header{}
 	if conn.authData != "" {
-		req.Header.Set("Authorization", "Basic "+conn.authData)
+		req.Header.Set("Authorization", conn.authData)
 	}
 
 	if conn.postData != "" {
@@ -77,7 +84,8 @@ func (conn *streamConn) connect() (*http.Response, error) {
 		req.ContentLength = int64(len(conn.postData))
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	}
-
+	Debug(req.Header)
+	Debug(conn.postData)
 	resp, err := conn.client.Do(&req)
 
 	if err != nil {
@@ -92,6 +100,49 @@ func (conn *streamConn) connect() (*http.Response, error) {
 	}
 
 	return resp, nil
+}
+
+func oauthConnect(conn *streamConn, params map[string]string) (*http.Response, error) {
+	if conn.stale {
+		return nil, errors.New("Stale connection")
+	}
+	/*
+		oauth.Params{
+				&oauth.Pair{Key: "status", Value: "Testing Status Update via GOAuth - OAuth consumer for #Golang"},
+			}
+	*/
+	op := make(oauth.Params, 0)
+	for n, v := range params {
+		op = append(op, &oauth.Pair{Key: n, Value: v})
+	}
+	resp, err := OauthCon.Post(
+		conn.url.String(),
+		op,
+		conn.at)
+
+	if err != nil {
+		Log(ERROR, "Could not Connect to Stream: ", err)
+		return nil, err
+	} else {
+		Debugf("connected to %s \n\thttp status = %v", conn.url, resp.Status)
+		Debug(resp.Header)
+		for n, v := range resp.Header {
+			Debug(n, v[0])
+		}
+	}
+
+	return resp, nil
+}
+
+func formString(params map[string]string) string {
+	var body bytes.Buffer
+	for k, v := range params {
+		body.WriteString(URLEscape(k))
+		body.WriteString("=")
+		body.WriteString(URLEscape(v))
+		body.WriteString("&")
+	}
+	return body.String()
 }
 
 func (conn *streamConn) readStream(resp *http.Response, handler func([]byte), uniqueId string, done chan bool) {
@@ -179,11 +230,20 @@ type Client struct {
 	Uniqueid string
 	conn     *streamConn
 	MaxWait  int
+	at       *oauth.AccessToken
 	Handler  func([]byte)
 }
 
 func NewClient(handler func([]byte)) *Client {
 	return &Client{
+		Handler: handler,
+		MaxWait: 300,
+	}
+}
+
+func NewOAuthClient(at *oauth.AccessToken, handler func([]byte)) *Client {
+	return &Client{
+		at:      at,
 		Handler: handler,
 		MaxWait: 300,
 	}
@@ -197,12 +257,13 @@ func NewBasicAuthClient(username, password string, handler func([]byte)) *Client
 		MaxWait:  300,
 	}
 }
+
 // Create a new basic Auth Channel Handler
 func NewChannelClient(username, password string, bc chan []byte) *Client {
 	return &Client{
 		Username: username,
 		Password: password,
-		Handler:  func(b []byte) { bc <- b},
+		Handler:  func(b []byte) { bc <- b },
 		MaxWait:  300,
 	}
 }
@@ -214,18 +275,27 @@ func (c *Client) SetMaxWait(max int) {
 	}
 }
 
-func (c *Client) Connect(url_ *url.URL, body string, done chan bool) (err error) {
+func (c *Client) Connect(url_ *url.URL, params map[string]string, done chan bool) (err error) {
 
 	var resp *http.Response
 	sc := NewStreamConn(c.MaxWait)
 
+	sc.url = url_
 	// if http basic auth
 	if c.Username != "" && c.Password != "" {
-		sc.authData = encodedAuth(c.Username, c.Password)
-	}
+		sc.postData = formString(params)
+		sc.authData = "Basic " + encodedAuth(c.Username, c.Password)
+		sc.connect = func() (*http.Response, error) {
+			return basicauthConnect(&sc)
+		}
 
-	sc.postData = body
-	sc.url = url_
+	} else {
+		sc.at = c.at
+		sc.connect = func() (*http.Response, error) {
+			return oauthConnect(&sc, params)
+		}
+
+	}
 	resp, err = sc.connect()
 	if err != nil {
 		Log(ERROR, " errror ", err)
@@ -266,34 +336,33 @@ Return:
 func (c *Client) Filter(userids []int64, topics []string, watchStalls bool, done chan bool) error {
 	var body bytes.Buffer
 
-	body.WriteString("stall_warnings=true&")
-
+	params := map[string]string{"stall_warnings": "true"}
 	if userids != nil && len(userids) > 0 {
-		body.WriteString("follow=")
+
 		for i, id := range userids {
 			body.WriteString(strconv.FormatInt(id, 10))
 			if i != len(userids)-1 {
 				body.WriteString(",")
 			}
 		}
-		body.WriteString("&")
 	}
+	params["follow"] = body.String()
+	body.Reset()
+
 	if topics != nil && len(topics) > 0 {
-		body.WriteString("track=")
 		for i, topic := range topics {
 			body.WriteString(topic)
 			if i != len(topics)-1 {
 				body.WriteString(",")
 			}
 		}
-		body.WriteString("&")
 	}
-	Debug("TWFILTER ", filterUrl, body.String())
+	params["track"] = body.String()
 	if watchStalls {
 		c.Handler = StallWatcher(c.Handler)
 	}
 
-	return c.Connect(filterUrl, body.String(), done)
+	return c.Connect(filterUrl, params, done)
 }
 
 // a handler wrapper to watch for twitter stall warnings
@@ -321,12 +390,12 @@ func StallWatcher(handler func([]byte)) func([]byte) {
 
 // twitter sample stream
 func (c *Client) Sample(done chan bool) error {
-	return c.Connect(sampleUrl, "", done)
+	return c.Connect(sampleUrl, nil, done)
 }
 
 // Track User tweets and events, uses passed username/pwd
 func (c *Client) User(done chan bool) error {
-	return c.Connect(userUrl, "", done)
+	return c.Connect(userUrl, nil, done)
 }
 
 // Close the client
