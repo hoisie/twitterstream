@@ -3,9 +3,9 @@ package httpstream
 import (
 	"encoding/json"
 	//"github.com/bsdf/twitter"
+	"io/ioutil"
 	"log"
 	"os"
-	"strconv"
 	"testing"
 )
 
@@ -821,10 +821,118 @@ var (
     "utc_offset": -28800,
     "verified": false
   }
-}`}
-	//tweet3 = `{"contributors":null,"coordinates":null,"in_reply_to_user_id":null,"truncated":true,"text":"RT @melaniebiehle: I just backed Vivarium: A Sci-Fi Thriller on @Kickstarter. My friend @nab717 is producing. Can you help? http:\/\/t.co\/ ...","entities":{"hashtags":[],"urls":[{"indices":[124,136],"expanded_url":null,"url":"http:\/\/t.co\/"}],"user_mentions":[{"indices":[3,17],"id_str":"64794579","name":"Inward Facing Girl","screen_name":"melaniebiehle","id":64794579},{"indices":[64,76],"id_str":"16186995","name":"Kickstarter","screen_name":"kickstarter","id":16186995},{"indices":[88,95],"id_str":"15248224","name":"Natalie Baack","screen_name":"nab717","id":15248224}]},"place":null,"possibly_sensitive_editable":true,"id_str":"234392395985334272","retweeted_status":{"contributors":null,"coordinates":null,"in_reply_to_user_id":null,"truncated":false,"text":"I just backed Vivarium: A Sci-Fi Thriller on @Kickstarter. My friend @nab717 is producing. Can you help? http:\/\/t.co\/SsbgFpSu #vivarium","entities":{"hashtags":[{"text":"vivarium","indices":[126,135]}],"urls":[{"display_url":"kck.st\/LVTCGk","indices":[105,125],"expanded_url":"http:\/\/kck.st\/LVTCGk","url":"http:\/\/t.co\/SsbgFpSu"}],"user_mentions":[{"indices":[45,57],"id_str":"16186995","name":"Kickstarter","screen_name":"kickstarter","id":16186995},{"indices":[69,76],"id_str":"15248224","name":"Natalie Baack","screen_name":"nab717","id":15248224}]},"place":null,"possibly_sensitive_editable":true,"id_str":"234392085426483200","favorited":false,"geo":null,"source":"\u003Ca href=\"http:\/\/twitter.com\/tweetbutton\" rel=\"nofollow\"\u003ETweet Button\u003C\/a\u003E","possibly_sensitive":false,"retweet_count":0,"in_reply_to_status_id_str":null,"in_reply_to_screen_name":null,"created_at":"Sat Aug 11 20:53:22 +0000 2012","in_reply_to_user_id_str":null,"user":{"show_all_inline_media":true,"lang":"en","friends_count":1635,"profile_sidebar_border_color":"CCD0D0","location":"Seattle, WA","profile_background_image_url_https":"https:\/\/si0.twimg.com\/profile_background_images\/538372796\/ifg-logo-4-28-2012-twitter-background.png","id_str":"64794579","listed_count":66,"profile_use_background_image":true,"profile_image_url_https":"https:\/\/si0.twimg.com\/profile_images\/2277637761\/hxddiot07gun6n3yynb4_normal.jpeg","description":"Blogger, photographer, graphic designer, social media and content marketing consultant at Inward Facing Girl. ","follow_request_sent":null,"following":null,"profile_text_color":"333333","default_profile":false,"profile_background_image_url":"http:\/\/a0.twimg.com\/profile_background_images\/538372796\/ifg-logo-4-28-2012-twitter-background.png","followers_count":1153,"is_translator":false,"time_zone":"Pacific Time (US & Canada)","profile_link_color":"ED4624","protected":false,"created_at":"Tue Aug 11 19:18:01 +0000 2009","profile_background_color":"FFFFFF","name":"Inward Facing Girl","default_profile_image":false,"contributors_enabled":false,"statuses_count":8962,"geo_enabled":true,"notifications":null,"profile_background_tile":false,"url":"http:\/\/www.inwardfacinggirl.com","profile_image_url":"http:\/\/a0.twimg.com\/profile_images\/2277637761\/hxddiot07gun6n3yynb4_normal.jpeg","screen_name":"melaniebiehle","id":64794579,"verified":false,"utc_offset":-28800,"favourites_count":39,"profile_sidebar_fill_color":"FFFFFF"},"retweeted":false,"in_reply_to_status_id":null,"id":234392085426483200},"favorited":false,"geo":null,"source":"web","possibly_sensitive":false,"retweet_count":0,"in_reply_to_status_id_str":null,"in_reply_to_screen_name":null,"created_at":"Sat Aug 11 20:54:36 +0000 2012","in_reply_to_user_id_str":null,"user":{"show_all_inline_media":false,"lang":"en","friends_count":558,"profile_sidebar_border_color":"D3D2CF","location":"Los Angeles","profile_background_image_url_https":"https:\/\/si0.twimg.com\/images\/themes\/theme3\/bg.gif","id_str":"15248224","listed_count":1,"profile_use_background_image":true,"profile_image_url_https":"https:\/\/si0.twimg.com\/profile_images\/2486263694\/eujyqzw08o5hlfvbz1bd_normal.jpeg","description":"Canadian born. Movie market researcher and analyst. Indie film producer (Vivarium currently live on Kickstarter - entervivarium.com). Echo Park dweller. ","follow_request_sent":null,"following":null,"profile_text_color":"634047","default_profile":false,"profile_background_image_url":"http:\/\/a0.twimg.com\/images\/themes\/theme3\/bg.gif","followers_count":247,"is_translator":false,"time_zone":"Pacific Time (US & Canada)","profile_link_color":"088253","protected":false,"created_at":"Thu Jun 26 21:04:00 +0000 2008","profile_background_color":"EDECE9","name":"Natalie Baack","default_profile_image":false,"contributors_enabled":false,"statuses_count":781,"geo_enabled":true,"notifications":null,"profile_background_tile":false,"url":"http:\/\/entervivarium.com","profile_image_url":"http:\/\/a0.twimg.com\/profile_images\/2486263694\/eujyqzw08o5hlfvbz1bd_normal.jpeg","screen_name":"nab717","id":15248224,"verified":false,"utc_offset":-28800,"favourites_count":2,"profile_sidebar_fill_color":"E3E2DE"},"retweeted":false,"in_reply_to_status_id":null,"id":234392395985334272}`
+}`, `{
+    "contributors": null,
+    "coordinates": null,
+    "created_at": "Mon Aug 20 16:54:02 +0000 2012",
+    "entities": {
+      "hashtags": null,
+      "urls": [
+        {
+          "display_url": "kck.st/O61qCH",
+          "expanded_url": "http://kck.st/O61qCH",
+          "indices": [
+            79,
+            99
+          ],
+          "url": "http://t.co/9f5u5IfG"
+        }
+      ],
+      "user_mentions": [
+        {
+          "id": 16186995,
+          "id_str": "16186995",
+          "indices": [
+            66,
+            78
+          ],
+          "name": "Kickstarter",
+          "screen_name": "kickstarter"
+        }
+      ]
+    },
+    "favorited": false,
+    "geo": null,
+    "id": 237593345881407489,
+    "id_str": "237593345881407489",
+    "in_reply_to_screen_name": null,
+    "in_reply_to_status_id": null,
+    "in_reply_to_status_id_str": null,
+    "in_reply_to_user_id": null,
+    "in_reply_to_user_id_str": null,
+    "place": null,
+    "possibly_sensitive": false,
+    "possibly_sensitive_editable": true,
+    "retweet_count": 0,
+    "retweeted": false,
+    "source": "\u003ca href=\"http://twitter.com/tweetbutton\" rel=\"nofollow\"\u003eTweet Button\u003c/a\u003e",
+    "text": "I just backed Numenera: A new roleplaying game from Monte Cook on @Kickstarter http://t.co/9f5u5IfG Good luck with the new project Monty",
+    "truncated": null,
+    "user": {
+      "contributors_enabled": false,
+      "created_at": "Wed Jul 15 18:23:57 +0000 2009",
+      "default_profile": false,
+      "default_profile_image": false,
+      "description": "Pencil and paper roleplaying game guru,Tabletop game Paragon DM/GM,player *.Demonologist,Paranormal investigator- Wiccan, ",
+      "favourites_count": 2,
+      "follow_request_sent": null,
+      "followers_count": 222,
+      "following": null,
+      "friends_count": 493,
+      "geo_enabled": true,
+      "id": 57093419,
+      "id_str": "57093419",
+      "is_translator": false,
+      "lang": "en",
+      "listed_count": 2,
+      "location": "Columbus, Ohio",
+      "name": "Gary Ganas",
+      "notifications": null,
+      "profile_background_color": "1A1B1F",
+      "profile_background_image_url": "http://a0.twimg.com/images/themes/theme9/bg.gif",
+      "profile_background_image_url_https": "https://si0.twimg.com/images/themes/theme9/bg.gif",
+      "profile_background_tile": false,
+      "profile_image_url": "http://a0.twimg.com/profile_images/344695177/Lothar_Loc_Nar_Pic_100_100_normal.JPG",
+      "profile_image_url_https": "https://si0.twimg.com/profile_images/344695177/Lothar_Loc_Nar_Pic_100_100_normal.JPG",
+      "profile_link_color": "2FC2EF",
+      "profile_sidebar_border_color": "181A1E",
+      "profile_sidebar_fill_color": "252429",
+      "profile_text_color": "666666",
+      "profile_use_background_image": true,
+      "protected": false,
+      "screen_name": "lotharlocnar",
+      "show_all_inline_media": true,
+      "statuses_count": 2719,
+      "time_zone": "Eastern Time (US & Canada)",
+      "url": "http://lotharlocnarblog.com",
+      "utc_offset": -18000,
+      "verified": false
+    }
+  }`}
+	//tweet3 = `{"extra":{"aid":"8","workid":"kick"},"tweet":{"text":"I just backed Numenera: A new roleplaying game from Monte Cook on @Kickstarter http:\/\/t.co\/9f5u5IfG Good luck with the new project Monty","created_at":"Mon Aug 20 16:54:02 +0000 2012","possibly_sensitive_editable":true,"coordinates":null,"retweeted":false,"entities":{"hashtags":[],"urls":[{"indices":[79,99],"url":"http:\/\/t.co\/9f5u5IfG","display_url":"kck.st\/O61qCH","expanded_url":"http:\/\/kck.st\/O61qCH"}],"user_mentions":[{"indices":[66,78],"id_str":"16186995","name":"Kickstarter","screen_name":"kickstarter","id":16186995}]},"in_reply_to_status_id":null,"place":null,"source":"\u003Ca href=\"http:\/\/twitter.com\/tweetbutton\" rel=\"nofollow\"\u003ETweet Button\u003C\/a\u003E","id_str":"237593345881407489","retweet_count":0,"favorited":false,"in_reply_to_status_id_str":null,"geo":null,"in_reply_to_screen_name":null,"possibly_sensitive":false,"in_reply_to_user_id_str":null,"contributors":null,"user":{"created_at":"Wed Jul 15 18:23:57 +0000 2009","friends_count":493,"profile_text_color":"666666","listed_count":2,"profile_background_image_url":"http:\/\/a0.twimg.com\/images\/themes\/theme9\/bg.gif","url":"http:\/\/lotharlocnarblog.com","follow_request_sent":null,"contributors_enabled":false,"profile_link_color":"2FC2EF","default_profile":false,"lang":"en","verified":false,"description":"Pencil and paper roleplaying game guru,Tabletop game Paragon DM\/GM,player *.Demonologist,Paranormal investigator- Wiccan, ","is_translator":false,"profile_background_image_url_https":"https:\/\/si0.twimg.com\/images\/themes\/theme9\/bg.gif","profile_background_color":"1A1B1F","followers_count":222,"location":"Columbus, Ohio","id_str":"57093419","show_all_inline_media":true,"notifications":null,"profile_background_tile":false,"statuses_count":2719,"following":null,"profile_sidebar_fill_color":"252429","default_profile_image":false,"time_zone":"Eastern Time (US & Canada)","protected":false,"geo_enabled":true,"favourites_count":2,"profile_sidebar_border_color":"181A1E","screen_name":"lotharlocnar","name":"Gary Ganas","profile_image_url_https":"https:\/\/si0.twimg.com\/profile_images\/344695177\/Lothar_Loc_Nar_Pic_100_100_normal.JPG","id":57093419,"profile_use_background_image":true,"utc_offset":-18000,"profile_image_url":"http:\/\/a0.twimg.com\/profile_images\/344695177\/Lothar_Loc_Nar_Pic_100_100_normal.JPG"},"id":237593345881407489,"in_reply_to_user_id":null,"truncated":null}}`
+	tweetData []interface{}
 )
 
+func loadJsonData() {
+	// load the tweet data
+	if jsonb, err := ioutil.ReadFile("data/tweets.json"); err == nil {
+		err = json.Unmarshal(jsonb, &tweetData)
+		Debug(string(jsonb))
+		if err != nil {
+			Log(ERROR, err)
+		} else {
+			for _, t := range tweetData {
+				if b, er := json.Marshal(t); er == nil {
+					tweets = append(tweets, string(b))
+				} else {
+					Log(ERROR, er)
+				}
+			}
+		}
+	} else {
+		Log(ERROR, "Failed to load test tweet data ", err)
+	}
+}
 func prettyJson(js string) {
 	m := make(map[string]interface{})
 	if err := json.Unmarshal([]byte(js), &m); err == nil {
@@ -860,9 +968,8 @@ func TestNullableString(t *testing.T) {
 
 func TestDecodeTweet1Test(t *testing.T) {
 	twlist := make([]Tweet, 0)
-	iv := int64(1.6186995e+07)
-	log.Println(strconv.FormatInt(iv, 10))
 	for i := 0; i < len(tweets); i++ {
+		//log.Println(tweets[i])
 		//for i := 3; i < 4; i++ {
 		tw := Tweet{}
 		err := json.Unmarshal([]byte(tweets[i]), &tw)

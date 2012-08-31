@@ -7,16 +7,16 @@ import (
 )
 
 type User struct {
-	Id                           int64
+	Id                           Int64Nullable
 	Name                         string
-	ScreenName                   string `json:"screen_name"`
-	ContributorsEnabled          bool   `json:"contributors_enabled"`
-	CreatedAt                    string `json:"created_at"`
-	Description                  StringNullable
-	FavouritesCount              int          `json:"favourites_count"`
-	Followerscount               int          `json:"followers_count"`
-	Following                    BoolNullable // "following":null,
-	Friendscount                 int          `json:"friends_count"`
+	ScreenName                   string         `json:"screen_name"`
+	ContributorsEnabled          bool           `json:"contributors_enabled"`
+	CreatedAt                    string         `json:"created_at"`
+	Description                  StringNullable `json:"description"`
+	FavouritesCount              int            `json:"favourites_count"`
+	Followerscount               int            `json:"followers_count"`
+	Following                    BoolNullable   // "following":null,
+	Friendscount                 int            `json:"friends_count"`
 	Geo_enabled                  bool
 	Lang                         string
 	Location                     StringNullable
@@ -36,7 +36,7 @@ type User struct {
 	Url                          StringNullable // "url":null
 	Utc_offset                   IntNullable    // "utc_offset":null,
 	Verified                     bool
-	//"show_all_inline_media":false,
+	ShowAllInlineMedia           BoolNullable `json:"show_all_inline_media"`
 	//"default_profile":false,
 	//"follow_request_sent":null,
 	//"is_translator":false,
@@ -54,15 +54,15 @@ type Tweet struct {
 	In_reply_to_screen_name StringNullable
 	In_reply_to_status_id   Int64Nullable
 	In_reply_to_user_id     Int64Nullable
-	Id                      int64
+	Id                      Int64Nullable
 	Id_str                  string
 	Created_at              string
 	Retweet_Count           int32
-	Retweeted               bool
-	Possibly_Sensitive      bool
+	Retweeted               BoolNullable
+	Possibly_Sensitive      BoolNullable
 	User                    *User
 	RawBytes                []byte
-	Truncated               bool
+	Truncated               BoolNullable
 	//Geo                     string   // deprecated
 	//Place                  // "place":null,
 	//RetweetedStatus         Tweet `json:"retweeted_status"`

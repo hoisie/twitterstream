@@ -8,9 +8,14 @@ import (
 )
 
 /*
- these next 3 functions copied from go source as it is not exported
+var out string
+if err := json.Unmarshal(string(data), &out); err == nil {
+	*s = out
+}
 
- They retain the Go licensing
+these next 3 functions copied from go source as it is not exported
+
+They retain the Go licensing
 
 */
 
@@ -149,13 +154,13 @@ func UnquoteBytes(s []byte) (t []byte, ok bool) {
 	return b[0:w], true
 }
 
-// details about all the nullable types http://code.google.com/p/go/issues/detail?id=2540
+// details about nullable types http://code.google.com/p/go/issues/detail?id=2540
 
 type Int64Nullable int64
 
 func (i Int64Nullable) UnmarshalJSON(data []byte) error {
-	if len(data) > 0 {
-		//ParseInt(s string, base int, bitSize int) (i int64, err error)
+	if len(data) > 0 && string(data) != "null" {
+		//Debug(string(data))
 		if in, err := strconv.ParseInt(string(data), 10, 64); err == nil {
 			i = Int64Nullable(in)
 		}
@@ -167,8 +172,7 @@ func (i Int64Nullable) UnmarshalJSON(data []byte) error {
 type IntNullable int
 
 func (i IntNullable) UnmarshalJSON(data []byte) error {
-	if len(data) > 0 {
-		//ParseInt(s string, base int, bitSize int) (i int64, err error)
+	if len(data) > 0 && string(data) != "null" {
 		if in, err := strconv.ParseInt(string(data), 10, 32); err == nil {
 			i = IntNullable(in)
 		}
