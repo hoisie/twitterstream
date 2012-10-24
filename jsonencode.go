@@ -158,13 +158,15 @@ func UnquoteBytes(s []byte) (t []byte, ok bool) {
 
 type Int64Nullable int64
 
-func (i Int64Nullable) UnmarshalJSON(data []byte) error {
-	if len(data) > 0 && string(data) != "null" {
-		//Debug(string(data))
-		if in, err := strconv.ParseInt(string(data), 10, 64); err == nil {
-			i = Int64Nullable(in)
-		}
+func (i *Int64Nullable) UnmarshalJSON(data []byte) error {
+	if len(data) == 0 || string(data) == "null" {
+		return nil
+	}
 
+	if in, err := strconv.ParseInt(string(data), 10, 64); err != nil {
+		return err
+	} else {
+		*i = Int64Nullable(in)
 	}
 	return nil
 }

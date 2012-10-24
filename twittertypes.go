@@ -7,7 +7,7 @@ import (
 )
 
 type User struct {
-	Id                           Int64Nullable
+	Id                           *Int64Nullable
 	Name                         string
 	ScreenName                   string         `json:"screen_name"`
 	ContributorsEnabled          bool           `json:"contributors_enabled"`
@@ -52,9 +52,9 @@ type Tweet struct {
 	Contributors            []Contributor
 	Coordinates             Coordinate
 	In_reply_to_screen_name StringNullable
-	In_reply_to_status_id   Int64Nullable
-	In_reply_to_user_id     Int64Nullable
-	Id                      Int64Nullable
+	In_reply_to_status_id   *Int64Nullable
+	In_reply_to_user_id     *Int64Nullable
+	Id                      *Int64Nullable
 	Id_str                  string
 	Created_at              string
 	Retweet_Count           int32
