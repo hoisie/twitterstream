@@ -15,6 +15,7 @@ import (
 	"errors"
 	oauth "github.com/akrennmair/goauth"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -122,8 +123,9 @@ func oauthConnect(conn *streamConn, params map[string]string) (*http.Response, e
 		conn.at)
 
 	if err != nil {
-		Log(ERROR, "Could not Connect to Stream: ", err)
-		return nil, err
+		data, _ := ioutil.ReadAll(resp.Body)
+		Log(ERROR, string(data))
+		resp.Body.Close()
 	} else {
 		Debugf("connected to %s \n\thttp status = %v", conn.url, resp.Status)
 		Debug(resp.Header)

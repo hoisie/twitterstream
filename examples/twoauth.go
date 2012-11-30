@@ -8,16 +8,20 @@ import (
 	"github.com/araddon/httpstream"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 )
 
 var (
+	maxCt    *int    = flag.Int("maxct", 10, "Max # of messages")
 	user     *string = flag.String("user", "", "twitter username")
 	ck       *string = flag.String("ck", "", "Consumer Key")
 	cs       *string = flag.String("cs", "", "Consumer Secret")
 	ot       *string = flag.String("ot", "", "Oauth Token")
 	osec     *string = flag.String("os", "", "OAuthTokenSecret")
 	logLevel *string = flag.String("logging", "debug", "Which log level: [debug,info,warn,error,fatal]")
+	search   *string = flag.String("search", "android,golang,zeromq,javascript", "keywords to search for, comma delimtted")
+	users    *string = flag.String("users", "", "list of twitter userids to filter for, comma delimtted")
 )
 
 func main() {
@@ -60,8 +64,15 @@ func main() {
 		// different thread/goroutine
 	}))
 
-	keywords := strings.Split("android,golang,zeromq,javascript", ",")
-	err := client.Filter([]int64{14230524, 783214}, keywords, false, done)
+	// find list of userids we are going to search for
+	userIds := make([]int64, 0)
+	for _, userId := range strings.Split(*users, ",") {
+		if id, err := strconv.ParseInt(userId, 10, 64); err == nil {
+			userIds = append(userIds, id)
+		}
+	}
+	keywords := strings.Split(*search, ",")
+	err := client.Filter(userIds, keywords, false, done)
 	if err != nil {
 		httpstream.Log(httpstream.ERROR, err.Error())
 	} else {
@@ -73,7 +84,7 @@ func main() {
 				println(string(tw))
 				// heavy lifting
 				ct++
-				if ct > 10 {
+				if ct > maxCt {
 					done <- true
 				}
 			}

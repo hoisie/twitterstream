@@ -15,7 +15,7 @@ type User struct {
 	Description                  StringNullable `json:"description"`
 	FavouritesCount              int            `json:"favourites_count"`
 	Followerscount               int            `json:"followers_count"`
-	Following                    *BoolNullable   // "following":null,
+	Following                    *BoolNullable  // "following":null,
 	Friendscount                 int            `json:"friends_count"`
 	Geo_enabled                  bool
 	Lang                         string
@@ -34,7 +34,7 @@ type User struct {
 	Statuses_Count               int `json:"statuses_count"`
 	Time_zone                    StringNullable
 	Url                          StringNullable // "url":null
-	Utc_offset                   *IntNullable    // "utc_offset":null,
+	Utc_offset                   *IntNullable   // "utc_offset":null,
 	Verified                     bool
 	ShowAllInlineMedia           *BoolNullable `json:"show_all_inline_media"`
 	//"default_profile":false,
@@ -90,6 +90,18 @@ func (t *Tweet) Hashes() []string {
 			tags = append(tags, t.Text)
 		}
 		return tags
+	}
+	return nil
+}
+
+// Return a list of usernames found in the tweet entity mentions
+func (t *Tweet) Mentions() []string {
+	if len(t.Entities.User_mentions) > 0 {
+		users := make([]string, 0)
+		for _, m := range t.Entities.User_mentions {
+			users = append(users, m.Screen_name)
+		}
+		return users
 	}
 	return nil
 }
