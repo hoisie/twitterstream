@@ -908,7 +908,43 @@ var (
       "utc_offset": -18000,
       "verified": false
     }
-  }`}
+  }`, `{
+		"possibly_sensitive_editable":true,
+		"in_reply_to_status_id_str":null,
+		"text":"#NowPlaying Sister Rosetta (Capture The Spirit) - Noisettes http:\/\/t.co\/KyMcZrb0 via @VEVO @JamieNoisettes",
+		"id_str":"275312890230226945",
+		"possibly_sensitive":false,
+		"in_reply_to_user_id_str":null,
+		"favorited":false,
+		"source":"\u003Ca href=\"http:\/\/twitter.com\/tweetbutton\" rel=\"nofollow\"\u003ETweet Button\u003C\/a\u003E",
+		"entities":{
+			"user_mentions":[
+				{"id_str":"28201743","indices":[85,90],"screen_name":"VEVO","name":"VEVO","id":28201743},
+				{"id_str":"","indices":[91,106],"screen_name":"JamieNoisettes","name":null,"id":null}
+			],
+			"hashtags":[{"text":"NowPlaying","indices":[0,11]}],
+			"urls":[{"indices":[60,80],"url":"http:\/\/t.co\/KyMcZrb0","display_url":"vevo.ly\/fOJ7q5","expanded_url":"http:\/\/vevo.ly\/fOJ7q5"}]
+		},
+		"contributors":null,
+		"created_at":"Sun Dec 02 18:58:02 +0000 2012","place":null,
+		"coordinates":null,"geo":null,"truncated":false,"retweeted":false,
+		"user":{
+			"default_profile":true,"profile_use_background_image":true,
+			"profile_image_url":"http:\/\/a0.twimg.com\/sticky\/default_profile_images\/default_profile_1_normal.png",
+			"id_str":"981245329","friends_count":2,"profile_text_color":"333333","notifications":null,
+			"profile_background_image_url":"http:\/\/a0.twimg.com\/images\/themes\/theme1\/bg.png",
+			"followers_count":2,"statuses_count":27,"profile_link_color":"0084B4","description":null,"default_profile_image":true,
+			"lang":"en","favourites_count":0,"created_at":"Fri Nov 30 21:07:41 +0000 2012","profile_background_color":"C0DEED",
+			"screen_name":"anderon_an","geo_enabled":false,"profile_background_tile":false,
+			"profile_background_image_url_https":"https:\/\/si0.twimg.com\/images\/themes\/theme1\/bg.png","url":null,
+			"verified":false,"profile_sidebar_fill_color":"DDEEF6","protected":false,"follow_request_sent":null,
+			"following":null,"name":"brenda carol anderon","is_translator":false,"listed_count":0,"profile_sidebar_border_color":"C0DEED",
+			"profile_image_url_https":"https:\/\/si0.twimg.com\/sticky\/default_profile_images\/default_profile_1_normal.png",
+			"location":null,"id":981245329,"contributors_enabled":false,"time_zone":null,"utc_offset":null
+		},
+		"id":275312890230226945,"retweet_count":0,"in_reply_to_screen_name":null,"in_reply_to_user_id":null,"in_reply_to_status_id":null
+		}`,
+	}
 	//tweet3 = `{"extra":{"aid":"8","workid":"kick"},"tweet":{"text":"I just backed Numenera: A new roleplaying game from Monte Cook on @Kickstarter http:\/\/t.co\/9f5u5IfG Good luck with the new project Monty","created_at":"Mon Aug 20 16:54:02 +0000 2012","possibly_sensitive_editable":true,"coordinates":null,"retweeted":false,"entities":{"hashtags":[],"urls":[{"indices":[79,99],"url":"http:\/\/t.co\/9f5u5IfG","display_url":"kck.st\/O61qCH","expanded_url":"http:\/\/kck.st\/O61qCH"}],"user_mentions":[{"indices":[66,78],"id_str":"16186995","name":"Kickstarter","screen_name":"kickstarter","id":16186995}]},"in_reply_to_status_id":null,"place":null,"source":"\u003Ca href=\"http:\/\/twitter.com\/tweetbutton\" rel=\"nofollow\"\u003ETweet Button\u003C\/a\u003E","id_str":"237593345881407489","retweet_count":0,"favorited":false,"in_reply_to_status_id_str":null,"geo":null,"in_reply_to_screen_name":null,"possibly_sensitive":false,"in_reply_to_user_id_str":null,"contributors":null,"user":{"created_at":"Wed Jul 15 18:23:57 +0000 2009","friends_count":493,"profile_text_color":"666666","listed_count":2,"profile_background_image_url":"http:\/\/a0.twimg.com\/images\/themes\/theme9\/bg.gif","url":"http:\/\/lotharlocnarblog.com","follow_request_sent":null,"contributors_enabled":false,"profile_link_color":"2FC2EF","default_profile":false,"lang":"en","verified":false,"description":"Pencil and paper roleplaying game guru,Tabletop game Paragon DM\/GM,player *.Demonologist,Paranormal investigator- Wiccan, ","is_translator":false,"profile_background_image_url_https":"https:\/\/si0.twimg.com\/images\/themes\/theme9\/bg.gif","profile_background_color":"1A1B1F","followers_count":222,"location":"Columbus, Ohio","id_str":"57093419","show_all_inline_media":true,"notifications":null,"profile_background_tile":false,"statuses_count":2719,"following":null,"profile_sidebar_fill_color":"252429","default_profile_image":false,"time_zone":"Eastern Time (US & Canada)","protected":false,"geo_enabled":true,"favourites_count":2,"profile_sidebar_border_color":"181A1E","screen_name":"lotharlocnar","name":"Gary Ganas","profile_image_url_https":"https:\/\/si0.twimg.com\/profile_images\/344695177\/Lothar_Loc_Nar_Pic_100_100_normal.JPG","id":57093419,"profile_use_background_image":true,"utc_offset":-18000,"profile_image_url":"http:\/\/a0.twimg.com\/profile_images\/344695177\/Lothar_Loc_Nar_Pic_100_100_normal.JPG"},"id":237593345881407489,"in_reply_to_user_id":null,"truncated":null}}`
 	tweetData []interface{}
 )
@@ -977,18 +1013,19 @@ func TestDecodeTweet1Test(t *testing.T) {
 			t.Error(err)
 			log.Println(tweets[i][0:100])
 		}
-		log.Println(i, " ", err)
+		log.Println(i, " ", err, tw.Text)
 		twlist = append(twlist, tw)
 	}
-	twx := twlist[1]
-	for _, url := range twx.Urls() {
-		Debug(url)
-	}
-	twx = twlist[1]
-	u := twx.Entities.Urls[0]
-	log.Println(twx.Urls())
-	log.Println(u.Expanded_url)
-
+	/*
+		twx := twlist[1]
+		for _, url := range twx.Urls() {
+			Debug(url)
+		}
+		twx = twlist[1]
+		u := twx.Entities.Urls[0]
+		log.Println(twx.Urls())
+		log.Println(u.Expanded_url)
+	*/
 	//prettyJson(tweet3)
 	//tw2 := twitter.Tweet{}
 	//err = json.Unmarshal([]byte(tweet2), &tw2)

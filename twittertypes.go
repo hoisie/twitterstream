@@ -169,8 +169,8 @@ type TwitterUrl struct {
 }
 type Mention struct {
 	Screen_name string
-	Name        string
-	Id          int64
+	Name        StringNullable // No idea why this could be null, if a username gets mentioned that doesn't exist?
+	Id          *Int64Nullable
 	Id_str      string
 	Indices     []int
 }
