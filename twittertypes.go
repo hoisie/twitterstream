@@ -8,6 +8,7 @@ import (
 
 type User struct {
 	Id                           *Int64Nullable
+	Id_str                       StringNullable `json:"id_str"` // "id_str":"608729011",
 	Name                         string
 	ScreenName                   string         `json:"screen_name"`
 	ContributorsEnabled          bool           `json:"contributors_enabled"`
@@ -161,10 +162,13 @@ type Hashtag struct {
 	Text    string
 	Indices []int
 }
+
+// A twitter url
+//  "urls":[{"indices":[123,136],"url":"http:\/\/t.co\/a","display_url":null,"expanded_url":null}]
 type TwitterUrl struct {
 	Url          string
-	Expanded_url StringNullable
-	Display_url  string
+	Expanded_url StringNullable // may be null
+	Display_url  StringNullable // may be null if it gets chopped off after t.co because of shortenring
 	Indices      []int
 }
 type Mention struct {
