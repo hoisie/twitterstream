@@ -51,7 +51,7 @@ type Tweet struct {
 	Favorited               bool
 	Source                  string
 	Contributors            []Contributor
-	Coordinates             Coordinate
+	Coordinates             *Coordinate
 	In_reply_to_screen_name StringNullable
 	In_reply_to_status_id   *Int64Nullable
 	In_reply_to_user_id     *Int64Nullable
@@ -64,8 +64,8 @@ type Tweet struct {
 	User                    *User
 	RawBytes                []byte
 	Truncated               *BoolNullable
+	Place                   *Place // "place":null,
 	//Geo                     string   // deprecated
-	//Place                  // "place":null,
 	//RetweetedStatus         Tweet `json:"retweeted_status"`
 }
 
@@ -114,7 +114,26 @@ type Coordinate struct {
 	Type        string
 }
 
-func (c *Coordinate) UnmarshalJSON(data []byte) error {
+type Place struct {
+	Attributes  interface{}
+	Bounding    BoundingBox `json:"bounding_box"`
+	Country     string      `json:"country"`
+	CountryCode string      `json:"country_code"`
+	Id          string      `json:"id"`
+	Name        string      `json:"name"`
+	FullName    string      `json:"full_name"`
+	PlaceType   string      `json:"place_type"`
+	Url         string      `json:"url"`
+}
+
+// Location bounding box of coordinates
+type BoundingBox struct {
+	Coordinates [][]float64
+	Type        string // "Polygon"
+}
+
+func (c *Coordinate) XXXUnmarshalJSON(data []byte) error {
+	// do we need this, can't we just use pointer?
 	if len(data) > 0 {
 		m := make(map[string]interface{})
 		if err := json.Unmarshal(data, m); err == nil {

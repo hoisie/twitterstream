@@ -1,30 +1,43 @@
 package main
 
 import (
-	"os"
 	"bytes"
 	"encoding/json"
 	"flag"
 	"github.com/araddon/httpstream"
 	"log"
+	"os"
+	//"reflect"
 	"strings"
 )
 
 var (
-	pwd *string = flag.String("pwd", "password", "Twitter Password")
-	user *string = flag.String("user", "username", "Twitter username")
-	track *string = flag.String("track", "", "Twitter terms to track")
+	pwd      *string = flag.String("pwd", "password", "Twitter Password")
+	user     *string = flag.String("user", "username", "Twitter username")
+	track    *string = flag.String("track", "", "Twitter terms to track")
 	logLevel *string = flag.String("logging", "debug", "Which log level: [debug,info,warn,error,fatal]")
 )
 
-func printPretty(tweet httpstream.Tweet) {
+func printPretty(tweet *httpstream.Tweet) {
+	b, err := json.MarshalIndent(tweet, " ", "   ")
+	if err == nil && tweet.Place != nil {
+		println(string(b))
+		//log.Println(tweet.Urls())
+	}
+}
+func printPrettyBytes(line []byte) {
+	var tweet map[string]interface{}
+	json.Unmarshal(line, &tweet)
 	b, err := json.MarshalIndent(tweet, " ", "   ")
 	if err == nil {
-		println(string(b))
-		log.Println(tweet.Urls())
+		if co, ok := tweet["place"]; ok && co != nil {
+			println(string(b))
+		}
 	}
 }
 
+// Since there are multiple types besides tweets sent in the http stream
+// determine which it is in order to serialize correctly
 func HandleLine(th int, line []byte) {
 	switch {
 	case bytes.HasPrefix(line, []byte(`{"event":`)):
@@ -34,12 +47,14 @@ func HandleLine(th int, line []byte) {
 		var friends httpstream.FriendList
 		json.Unmarshal(line, &friends)
 	default:
+		//printPrettyBytes(line)
 		tweet := httpstream.Tweet{}
 		json.Unmarshal(line, &tweet)
-		if tweet.User != nil {
-			//println(th, " ", tweet.User.Screen_name, ": ", tweet.Text)
-			printPretty(tweet)
-		}
+		printPretty(&tweet)
+		//if tweet.Coordinates != nil {
+		//println(th, " ", tweet.User.Screen_name, ": ", tweet.Text)
+		//	printPretty(tweet)
+		//}
 	}
 }
 
@@ -63,7 +78,7 @@ func main() {
 	//err := client.Track([]string{"bieber,iphone,mac,android,ios,lady gaga,dancing,sick,game,when,why,where,how,who"}, stream)
 	// this opens a go routine that is effectively thread 1
 	if len(*track) > 0 {
-		err = client.Filter(nil, strings.Split(*track,","), true, done)
+		err = client.Filter(nil, strings.Split(*track, ","), true, done)
 	} else {
 		err = client.Sample(done)
 	}
@@ -74,7 +89,6 @@ func main() {
 	go func() {
 		for {
 			line := <-stream
-			println()
 			HandleLine(1, line)
 		}
 	}()
