@@ -123,9 +123,14 @@ func oauthConnect(conn *streamConn, params map[string]string) (*http.Response, e
 		conn.at)
 
 	if err != nil {
-		data, _ := ioutil.ReadAll(resp.Body)
-		Log(ERROR, string(data))
-		resp.Body.Close()
+		if resp != nil && resp.Body != nil {
+			data, _ := ioutil.ReadAll(resp.Body)
+			Log(ERROR, err, " ", string(data))
+			resp.Body.Close()
+		} else {
+			Log(ERROR, err)
+		}
+
 	} else {
 		Debugf("connected to %s \n\thttp status = %v", conn.url, resp.Status)
 		Debug(resp.Header)
