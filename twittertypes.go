@@ -2,7 +2,7 @@ package httpstream
 
 import (
 	"bytes"
-	"encoding/json"
+	//"encoding/json"
 	"net/url"
 )
 
@@ -128,11 +128,12 @@ type Place struct {
 
 // Location bounding box of coordinates
 type BoundingBox struct {
-	Coordinates [][]float64
+	Coordinates [][][]float64
 	Type        string // "Polygon"
 }
 
-func (c *Coordinate) XXXUnmarshalJSON(data []byte) error {
+/*
+func (c *Coordinate) UnmarshalJSON(data []byte) error {
 	// do we need this, can't we just use pointer?
 	if len(data) > 0 {
 		m := make(map[string]interface{})
@@ -151,7 +152,7 @@ func (c *Coordinate) XXXUnmarshalJSON(data []byte) error {
 	}
 	return nil
 }
-
+*/
 type Contributor struct {
 	Id          int64
 	Id_str      string
