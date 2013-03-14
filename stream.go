@@ -175,11 +175,10 @@ func (conn *streamConn) readStream(resp *http.Response, handler func([]byte), un
 				continue
 			}
 			time.Sleep(time.Second * time.Duration(conn.wait))
-			//try reconnecting, but exponentially back off until MaxWait is reached
-			// then exit?  
+			//try reconnecting, but exponentially back off until MaxWait is reached then exit?  
 			resp, err := conn.connect()
-			if err != nil {
-				Log(ERROR, " Could not reconnect to source? sleeping and will retry ", conn.wait, err.Error())
+			if err != nil || resp == nil {
+				Log(ERROR, " Could not reconnect to source? sleeping and will retry ", err)
 				if conn.wait < conn.maxWait {
 					conn.wait = conn.wait * 2
 				} else {
