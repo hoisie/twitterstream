@@ -77,11 +77,11 @@ func basicauthConnect(conn *streamConn) (*http.Response, error) {
 	req.Method = "GET"
 	req.Header = http.Header{}
 	if conn.authData != "" {
-		req.Header.Set("Authorization", conn.authData)
+      req.Header.Set("Authorization", conn.authData)
 	}
 
 	if conn.postData != "" {
-		req.Method = "POST"
+      req.Method = "POST"
 		req.Body = nopCloser{bytes.NewBufferString(conn.postData)}
 		req.ContentLength = int64(len(conn.postData))
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -305,7 +305,7 @@ func (c *Client) Connect(url_ *url.URL, params map[string]string, done chan bool
 	}
 	resp, err = sc.connect()
 	if err != nil {
-		Log(ERROR, " errror ", err)
+		Log(ERROR, " error ", err)
 		goto Return
 	}
 
@@ -336,11 +336,11 @@ Return:
 // @topics list of words, up to 500
 // @done channel to end on ::
 //		
-//		cl.Filter([]int64{1,2,3,4},nil, false, done )
+//		cl.Filter([]int64{1,2,3,4},nil, nil, false, done )
 //
-//		cl.Filter([]int64{1,2,3,4},[]string{"golang"}, false, done )
+//		cl.Filter([]int64{1,2,3,4},[]string{"golang"},[]string{"en"}, false, done )
 //
-func (c *Client) Filter(userids []int64, topics []string, watchStalls bool, done chan bool) error {
+func (c *Client) Filter(userids []int64, topics []string, languages []string,  watchStalls bool, done chan bool) error {
 
 	params := make(map[string]string)
 	params["stall_warnings"] = "true"
@@ -355,6 +355,10 @@ func (c *Client) Filter(userids []int64, topics []string, watchStalls bool, done
 	if topics != nil && len(topics) > 0 {
 		params["track"] = strings.Join(topics, ",")
 	}
+
+   if languages != nil && len(languages) > 0 {
+      params["language"] = strings.Join(languages, ",")
+   }
 
 	if watchStalls {
 		c.Handler = StallWatcher(c.Handler)

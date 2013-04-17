@@ -28,7 +28,7 @@ func main() {
 	}))
 
 	keywords := strings.Split("android,golang,zeromq,javascript", ",")
-	err := client.Filter([]int64{14230524, 783214}, keywords, false, done)
+	err := client.Filter([]int64{14230524, 783214}, keywords,[]string{"en"}, false, done)
 	if err != nil {
 		httpstream.Log(httpstream.ERROR, err.Error())
 	} else {

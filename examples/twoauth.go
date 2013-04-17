@@ -72,7 +72,7 @@ func main() {
 		}
 	}
 	keywords := strings.Split(*search, ",")
-	err := client.Filter(userIds, keywords, false, done)
+	err := client.Filter(userIds, keywords, []string{"en"}, false, done)
 	if err != nil {
 		httpstream.Log(httpstream.ERROR, err.Error())
 	} else {
