@@ -25,8 +25,8 @@ import (
 )
 
 var (
-	filterUrl, _                   = url.Parse("https://stream.twitter.com/1/statuses/filter.json")
-	sampleUrl, _                   = url.Parse("https://stream.twitter.com/1/statuses/sample.json")
+	filterUrl, _                   = url.Parse("https://stream.twitter.com/1.1/statuses/filter.json")
+	sampleUrl, _                   = url.Parse("https://stream.twitter.com/1.1/statuses/sample.json")
 	userUrl, _                     = url.Parse("https://userstream.twitter.com/2/user.json")
 	siteStreamUrl, _               = url.Parse("https://sitestream.twitter.com/2b/site.json")
 	retryTimeout     time.Duration = time.Second * 10
