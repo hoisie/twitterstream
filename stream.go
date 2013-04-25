@@ -39,6 +39,7 @@ func init() {
 
 type streamConn struct {
 	client   *http.Client
+	resp     *http.Response
 	url      *url.URL
 	at       *oauth.AccessToken
 	authData string
@@ -63,6 +64,9 @@ func (conn *streamConn) Close() {
 	// Just mark the connection as stale, and let the connect() handler close after a read
 	conn.stale = true
 	conn.closed = true
+	if conn.resp != nil {
+		conn.resp.Body.Close()
+	}
 }
 
 func basicauthConnect(conn *streamConn) (*http.Response, error) {
@@ -157,6 +161,7 @@ func (conn *streamConn) readStream(resp *http.Response, handler func([]byte), un
 
 	var reader *bufio.Reader
 	reader = bufio.NewReader(resp.Body)
+	conn.resp = resp
 
 	for {
 		//we've been closed
