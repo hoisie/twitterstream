@@ -84,7 +84,7 @@ func main() {
 				println(string(tw))
 				// heavy lifting
 				ct++
-				if ct > maxCt {
+				if ct > *maxCt {
 					done <- true
 				}
 			}
