@@ -1,5 +1,5 @@
 /*
-A Go http streaming client. http-streaming is most-associated with the twitter stream api.  
+A Go http streaming client. http-streaming is most-associated with the twitter stream api.
 This client works with twitter, but has also been tested against the data-sift stream and
 flowdock stream api's
 
@@ -46,7 +46,7 @@ type streamConn struct {
 	postData string
 	stale    bool
 	closed   bool
-	// wait time before trying to reconnect, this will be 
+	// wait time before trying to reconnect, this will be
 	// exponentially moved up until reaching maxWait, when
 	// it will exit
 	wait    int
@@ -180,7 +180,7 @@ func (conn *streamConn) readStream(resp *http.Response, handler func([]byte), un
 				continue
 			}
 			time.Sleep(time.Second * time.Duration(conn.wait))
-			//try reconnecting, but exponentially back off until MaxWait is reached then exit?  
+			//try reconnecting, but exponentially back off until MaxWait is reached then exit?
 			resp, err := conn.connect()
 			if err != nil || resp == nil {
 				Log(ERROR, " Could not reconnect to source? sleeping and will retry ", err)
@@ -312,6 +312,9 @@ func (c *Client) Connect(url_ *url.URL, params map[string]string, done chan bool
 	if err != nil {
 		Log(ERROR, " error ", err)
 		goto Return
+	} else if resp == nil {
+		Log(ERROR, "No response on connection, invalid connect")
+		goto Return
 	}
 
 	if resp.StatusCode != 200 {
@@ -337,10 +340,10 @@ Return:
 }
 
 // Filter, look for users, topics.   See doc: https://dev.twitter.com/docs/streaming-api/methods
-// @userids list of twitter userids to follow (up to 5000). 
+// @userids list of twitter userids to follow (up to 5000).
 // @topics list of words, up to 500
 // @done channel to end on ::
-//		
+//
 //		cl.Filter([]int64{1,2,3,4},nil, nil, false, done )
 //
 //		cl.Filter([]int64{1,2,3,4},[]string{"golang"},[]string{"en"}, false, done )
