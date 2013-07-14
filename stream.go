@@ -348,7 +348,7 @@ Return:
 //
 //		cl.Filter([]int64{1,2,3,4},[]string{"golang"},[]string{"en"}, false, done )
 //
-func (c *Client) Filter(userids []int64, topics []string, languages []string, watchStalls bool, done chan bool) error {
+func (c *Client) Filter(userids []int64, topics []string, languages []string, locations []string, watchStalls bool, done chan bool) error {
 
 	params := make(map[string]string)
 	params["stall_warnings"] = "true"
@@ -366,6 +366,10 @@ func (c *Client) Filter(userids []int64, topics []string, languages []string, wa
 
 	if languages != nil && len(languages) > 0 {
 		params["language"] = strings.Join(languages, ",")
+	}
+
+	if locations != nil && len(locations) > 0 {
+		params["locations"] = strings.Join(locations, ",")
 	}
 
 	if watchStalls {
