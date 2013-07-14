@@ -4,7 +4,7 @@ package main
 
 import (
 	"flag"
-	oauth "github.com/akrennmair/goauth"
+	oauth "github.com/araddon/goauth"
 	"github.com/araddon/httpstream"
 	"log"
 	"os"
@@ -60,7 +60,7 @@ func main() {
 		stream <- line
 		// although you can do heavy lifting here, it means you are doing all
 		// your work in the same thread as the http streaming/listener
-		// by using a go channel, you can send the work to a 
+		// by using a go channel, you can send the work to a
 		// different thread/goroutine
 	}))
 
@@ -72,7 +72,7 @@ func main() {
 		}
 	}
 	keywords := strings.Split(*search, ",")
-	err := client.Filter(userIds, keywords, []string{"en"}, false, done)
+	err := client.Filter(userIds, keywords, []string{"en"}, nil, false, done)
 	if err != nil {
 		httpstream.Log(httpstream.ERROR, err.Error())
 	} else {

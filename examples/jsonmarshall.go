@@ -78,7 +78,7 @@ func main() {
 	//err := client.Track([]string{"bieber,iphone,mac,android,ios,lady gaga,dancing,sick,game,when,why,where,how,who"}, stream)
 	// this opens a go routine that is effectively thread 1
 	if len(*track) > 0 {
-		err = client.Filter(nil, strings.Split(*track, ","), nil, true, done)
+		err = client.Filter(nil, strings.Split(*track, ","), nil, nil, true, done)
 	} else {
 		err = client.Sample(done)
 	}

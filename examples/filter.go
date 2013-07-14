@@ -12,7 +12,7 @@ var (
 	pwd       *string = flag.String("pwd", "password", "Password")
 	user      *string = flag.String("user", "username", "username")
 	track     *string = flag.String("track", "", "Twitter terms to track")
-	locations *string = flag.String("locations", "", "Pass the locations filtering")
+	locations *string = flag.String("locations", "", "Pass the locations filtering, comma delimitted")
 	words     *string = flag.String("keywords", "", "List of keywords to search")
 	logLevel  *string = flag.String("logging", "debug", "Which log level: [debug,info,warn,error,fatal]")
 )
@@ -29,9 +29,10 @@ func main() {
 		stream <- line
 	}))
 
-	keywords := strings.Split(words)
+	keywords := strings.Split(*words, ",")
 	//err := client.Filter([]int64{14230524, 783214}, keywords, []string{"en"}, locations, false, done)
-	err := client.Filter([]int64{}, keywords, []string{"en"}, locations, false, done)
+	err := client.Filter([]int64{}, keywords, []string{"en"},
+		strings.Split(*locations, ","), false, done)
 	if err != nil {
 		httpstream.Log(httpstream.ERROR, err.Error())
 	} else {

@@ -38,7 +38,7 @@ func main() {
 	client := NewClient(func(line []byte) {
 		stream <- line
 	})
-	_ = client.Connect(flowUrl, "", done)
+	_ = client.Connect(flowUrl, nil, done)
 
 	for {
 		evt := <-stream

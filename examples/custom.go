@@ -20,7 +20,7 @@ func main() {
 
 	flag.Parse()
 
-	// make a go channel for 
+	// make a go channel for
 	stream := make(chan []byte, 200)
 	done := make(chan bool)
 
@@ -34,7 +34,7 @@ func main() {
 	})
 	client.MaxWait = 20
 
-	err := client.Connect(customUrl, "", done)
+	err := client.Connect(customUrl, nil, done)
 	if err != nil {
 		println(err.Error())
 	} else {

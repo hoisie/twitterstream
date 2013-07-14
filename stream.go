@@ -13,7 +13,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"errors"
-	oauth "github.com/akrennmair/goauth"
+	oauth "github.com/araddon/goauth"
 	"io"
 	"io/ioutil"
 	"log"
@@ -287,6 +287,9 @@ func (c *Client) SetMaxWait(max int) {
 	}
 }
 
+// Connect to an http stream
+// @url = http address
+// @params = http params to be added
 func (c *Client) Connect(url_ *url.URL, params map[string]string, done chan bool) (err error) {
 
 	var resp *http.Response
@@ -342,11 +345,13 @@ Return:
 // Filter, look for users, topics.   See doc: https://dev.twitter.com/docs/streaming-api/methods
 // @userids list of twitter userids to follow (up to 5000).
 // @topics list of words, up to 500
+// @languages:  list of languages to filter for
+// @locations:  optional list of locations
 // @done channel to end on ::
 //
-//		cl.Filter([]int64{1,2,3,4},nil, nil, false, done )
+//		cl.Filter([]int64{1,2,3,4},nil, nil, nil, false, done )
 //
-//		cl.Filter([]int64{1,2,3,4},[]string{"golang"},[]string{"en"}, false, done )
+//		cl.Filter([]int64{1,2,3,4},[]string{"golang"},[]string{"en"}, nil, false, done )
 //
 func (c *Client) Filter(userids []int64, topics []string, languages []string, locations []string, watchStalls bool, done chan bool) error {
 
