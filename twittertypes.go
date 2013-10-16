@@ -38,6 +38,7 @@ type User struct {
 	Utc_offset                   *IntNullable   // "utc_offset":null,
 	Verified                     bool
 	ShowAllInlineMedia           *BoolNullable `json:"show_all_inline_media"`
+	RawBytes                     []byte
 	//"default_profile":false,
 	//"follow_request_sent":null,
 	//"is_translator":false,
@@ -107,7 +108,7 @@ func (t *Tweet) Mentions() []string {
 	return nil
 }
 
-// Create a nullable coordinates, as the data comes across like so:  
+// Create a nullable coordinates, as the data comes across like so:
 //    "coordinates":null,
 type Coordinate struct {
 	Coordinates []float64
