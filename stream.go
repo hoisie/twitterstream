@@ -13,7 +13,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"errors"
-	oauth "github.com/araddon/goauth"
+	"github.com/mrjones/oauth"
 	"io"
 	"io/ioutil"
 	"log"
@@ -30,7 +30,7 @@ var (
 	userUrl, _                     = url.Parse("https://userstream.twitter.com/2/user.json")
 	siteStreamUrl, _               = url.Parse("https://sitestream.twitter.com/2b/site.json")
 	retryTimeout     time.Duration = time.Second * 10
-	OauthCon         *oauth.OAuthConsumer
+	OauthCon         *oauth.Consumer
 )
 
 func init() {
@@ -112,19 +112,8 @@ func oauthConnect(conn *streamConn, params map[string]string) (*http.Response, e
 	if conn.stale {
 		return nil, errors.New("Stale connection")
 	}
-	/*
-		oauth.Params{
-				&oauth.Pair{Key: "status", Value: "Testing Status Update via GOAuth - OAuth consumer for #Golang"},
-			}
-	*/
-	op := make(oauth.Params, 0)
-	for n, v := range params {
-		op = append(op, &oauth.Pair{Key: n, Value: v})
-	}
-	resp, err := OauthCon.Post(
-		conn.url.String(),
-		op,
-		conn.at)
+
+	resp, err := OauthCon.Post(conn.url.String(), params, conn.at)
 
 	if err != nil {
 		if resp != nil && resp.Body != nil {
