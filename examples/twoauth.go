@@ -4,8 +4,8 @@ package main
 
 import (
 	"flag"
-	oauth "github.com/araddon/goauth"
 	"github.com/araddon/httpstream"
+	"github.com/mrjones/oauth"
 	"log"
 	"os"
 	"strconv"
@@ -13,15 +13,15 @@ import (
 )
 
 var (
-	maxCt    *int    = flag.Int("maxct", 10, "Max # of messages")
-	user     *string = flag.String("user", "", "twitter username")
-	ck       *string = flag.String("ck", "", "Consumer Key")
-	cs       *string = flag.String("cs", "", "Consumer Secret")
-	ot       *string = flag.String("ot", "", "Oauth Token")
-	osec     *string = flag.String("os", "", "OAuthTokenSecret")
-	logLevel *string = flag.String("logging", "debug", "Which log level: [debug,info,warn,error,fatal]")
-	search   *string = flag.String("search", "android,golang,zeromq,javascript", "keywords to search for, comma delimtted")
-	users    *string = flag.String("users", "", "list of twitter userids to filter for, comma delimtted")
+	maxCt          *int    = flag.Int("maxct", 10, "Max # of messages")
+	user           *string = flag.String("user", "", "twitter username")
+	consumerKey    *string = flag.String("ck", "", "Consumer Key")
+	consumerSecret *string = flag.String("cs", "", "Consumer Secret")
+	ot             *string = flag.String("ot", "", "Oauth Token")
+	osec           *string = flag.String("os", "", "OAuthTokenSecret")
+	logLevel       *string = flag.String("logging", "debug", "Which log level: [debug,info,warn,error,fatal]")
+	search         *string = flag.String("search", "android,golang,zeromq,javascript", "keywords to search for, comma delimtted")
+	users          *string = flag.String("users", "", "list of twitter userids to filter for, comma delimtted")
 )
 
 func main() {
@@ -34,24 +34,18 @@ func main() {
 	stream := make(chan []byte, 1000)
 	done := make(chan bool)
 
-	httpstream.OauthCon = &oauth.OAuthConsumer{
-		Service:          "twitter",
-		RequestTokenURL:  "http://twitter.com/oauth/request_token",
-		AccessTokenURL:   "http://twitter.com/oauth/access_token",
-		AuthorizationURL: "http://twitter.com/oauth/authorize",
-		ConsumerKey:      *ck,
-		ConsumerSecret:   *cs,
-		CallBackURL:      "oob",
-		UserAgent:        "go/httpstream",
-	}
+	httpstream.OauthCon = oauth.NewConsumer(
+		*consumerKey,
+		*consumerSecret,
+		oauth.ServiceProvider{
+			RequestTokenUrl:   "http://api.twitter.com/oauth/request_token",
+			AuthorizeTokenUrl: "https://api.twitter.com/oauth/authorize",
+			AccessTokenUrl:    "https://api.twitter.com/oauth/access_token",
+		})
 
-	//at := goauthcon.GetAccessToken(rt.Token, pin)
-	at := oauth.AccessToken{Id: "",
-		Token:    *ot,
-		Secret:   *osec,
-		UserRef:  *user,
-		Verifier: "",
-		Service:  "twitter",
+	at := oauth.AccessToken{
+		Token:  *ot,
+		Secret: *osec,
 	}
 	// the stream listener effectively operates in one "thread"/goroutine
 	// as the httpstream Client processes inside a go routine it opens
