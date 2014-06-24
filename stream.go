@@ -13,7 +13,6 @@ import (
 	"bytes"
 	"encoding/base64"
 	"errors"
-	"github.com/mrjones/oauth"
 	"io"
 	"io/ioutil"
 	"log"
@@ -21,7 +20,10 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
+
+	"github.com/mrjones/oauth"
 )
 
 var (
@@ -38,14 +40,15 @@ func init() {
 }
 
 type streamConn struct {
-	client   *http.Client
-	resp     *http.Response
-	url      *url.URL
-	at       *oauth.AccessToken
-	authData string
-	postData string
-	stale    bool
-	closed   bool
+	client    *http.Client
+	resp      *http.Response
+	url       *url.URL
+	at        *oauth.AccessToken
+	authData  string
+	postData  string
+	stale     bool
+	closed    bool
+	staleLock sync.Mutex
 	// wait time before trying to reconnect, this will be
 	// exponentially moved up until reaching maxWait, when
 	// it will exit
@@ -62,7 +65,9 @@ func NewStreamConn(max int) streamConn {
 
 func (conn *streamConn) Close() {
 	// Just mark the connection as stale, and let the connect() handler close after a read
+	conn.staleLock.Lock()
 	conn.stale = true
+	conn.staleLock.Unlock()
 	conn.closed = true
 	if conn.resp != nil {
 		conn.resp.Body.Close()
@@ -70,7 +75,7 @@ func (conn *streamConn) Close() {
 }
 
 func basicauthConnect(conn *streamConn) (*http.Response, error) {
-	if conn.stale {
+	if conn.isStale() {
 		return nil, errors.New("Stale connection")
 	}
 
@@ -109,7 +114,7 @@ func basicauthConnect(conn *streamConn) (*http.Response, error) {
 }
 
 func oauthConnect(conn *streamConn, params map[string]string) (*http.Response, error) {
-	if conn.stale {
+	if conn.isStale() {
 		return nil, errors.New("Stale connection")
 	}
 
@@ -146,6 +151,13 @@ func formString(params map[string]string) string {
 	return body.String()
 }
 
+func (conn *streamConn) isStale() bool {
+	conn.staleLock.Lock()
+	r := conn.stale
+	conn.staleLock.Unlock()
+	return r
+}
+
 func (conn *streamConn) readStream(resp *http.Response, handler func([]byte), uniqueId string, done chan bool) {
 
 	var reader *bufio.Reader
@@ -154,7 +166,7 @@ func (conn *streamConn) readStream(resp *http.Response, handler func([]byte), un
 
 	for {
 		//we've been closed
-		if conn.stale {
+		if conn.isStale() {
 			conn.Close()
 			Debug("Connection closed, shutting down ")
 			break
@@ -164,7 +176,7 @@ func (conn *streamConn) readStream(resp *http.Response, handler func([]byte), un
 
 		if err != nil {
 
-			if conn.stale {
+			if conn.isStale() {
 				Debug("conn stale, continue")
 				continue
 			}
@@ -409,7 +421,7 @@ func (c *Client) User(done chan bool) error {
 // Close the client
 func (c *Client) Close() {
 	//has it already been closed?
-	if c.conn == nil || c.conn.stale {
+	if c.conn == nil || c.conn.isStale() {
 		return
 	}
 	c.conn.Close()
