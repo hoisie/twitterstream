@@ -15,7 +15,6 @@ import (
 	"errors"
 	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -34,10 +33,6 @@ var (
 	retryTimeout     time.Duration = time.Second * 10
 	OauthCon         *oauth.Consumer
 )
-
-func init() {
-	log.SetFlags(log.Ltime | log.Lshortfile | log.Lmicroseconds)
-}
 
 type streamConn struct {
 	client    *http.Client
