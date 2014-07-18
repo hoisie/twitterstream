@@ -66,6 +66,7 @@ type Tweet struct {
 	RawBytes                []byte
 	Truncated               *BoolNullable
 	Place                   *Place // "place":null,
+	Lang                    string
 	//Geo                     string   // deprecated
 	//RetweetedStatus         Tweet `json:"retweeted_status"`
 }
