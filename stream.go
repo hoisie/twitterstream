@@ -35,15 +35,15 @@ var (
 )
 
 type streamConn struct {
-	client    *http.Client
-	resp      *http.Response
-	url       *url.URL
-	at        *oauth.AccessToken
-	authData  string
-	postData  string
-	stale     bool
-	closed    bool
-	staleLock sync.Mutex
+	client   *http.Client
+	resp     *http.Response
+	url      *url.URL
+	at       *oauth.AccessToken
+	authData string
+	postData string
+	stale    bool
+	closed   bool
+	mu       sync.Mutex
 	// wait time before trying to reconnect, this will be
 	// exponentially moved up until reaching maxWait, when
 	// it will exit
@@ -60,9 +60,9 @@ func NewStreamConn(max int) streamConn {
 
 func (conn *streamConn) Close() {
 	// Just mark the connection as stale, and let the connect() handler close after a read
-	conn.staleLock.Lock()
+	conn.mu.Lock()
+	defer conn.mu.Unlock()
 	conn.stale = true
-	conn.staleLock.Unlock()
 	conn.closed = true
 	if conn.resp != nil {
 		conn.resp.Body.Close()
@@ -147,9 +147,9 @@ func formString(params map[string]string) string {
 }
 
 func (conn *streamConn) isStale() bool {
-	conn.staleLock.Lock()
+	conn.mu.Lock()
 	r := conn.stale
-	conn.staleLock.Unlock()
+	conn.mu.Unlock()
 	return r
 }
 
