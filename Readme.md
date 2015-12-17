@@ -23,9 +23,8 @@ This is an example of using the `Sample` method:
 
 This is an example of using the `Track` method:
 
-  package main
-
-  import "twitterstream"
+    package main
+    import "twitterstream"
 
     func main() {
         stream := make(chan *twitterstream.Tweet)
