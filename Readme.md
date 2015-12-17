@@ -5,6 +5,7 @@ For the regular streaming API, there's only three methods: `Follow`, `Track`, an
 This is an example of using the `Sample` method:
 
     package main
+
     import "twitterstream"
 
     func main() {
