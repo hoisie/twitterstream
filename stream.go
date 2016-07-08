@@ -22,6 +22,7 @@ import (
 	"sync"
 	"time"
 
+	"crypto/tls"
 	"github.com/mrjones/oauth"
 )
 
@@ -47,13 +48,14 @@ type streamConn struct {
 	// wait time before trying to reconnect, this will be
 	// exponentially moved up until reaching maxWait, when
 	// it will exit
-	wait    int
-	maxWait int
-	connect func() (*http.Response, error)
+	wait     int
+	maxWait  int
+	insecure bool
+	connect  func() (*http.Response, error)
 }
 
-func NewStreamConn(max int) streamConn {
-	return streamConn{wait: 1, maxWait: max}
+func NewStreamConn(max int, insecure bool) streamConn {
+	return streamConn{wait: 1, maxWait: max, insecure: insecure}
 }
 
 //type StreamHandler func([]byte)
@@ -75,6 +77,11 @@ func basicauthConnect(conn *streamConn) (*http.Response, error) {
 	}
 
 	conn.client = &http.Client{}
+	if conn.insecure {
+		conn.client.Transport = &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		}
+	}
 
 	var req http.Request
 	req.URL = conn.url
@@ -164,6 +171,7 @@ func (conn *streamConn) readStream(resp *http.Response, handler func([]byte), un
 		if conn.isStale() {
 			conn.Close()
 			Debug("Connection closed, shutting down ")
+			done <- true
 			break
 		}
 
@@ -238,6 +246,7 @@ type Client struct {
 	Uniqueid string
 	conn     *streamConn
 	MaxWait  int
+	Insecure bool
 	at       *oauth.AccessToken
 	Handler  func([]byte)
 }
@@ -283,13 +292,20 @@ func (c *Client) SetMaxWait(max int) {
 	}
 }
 
+func (c *Client) SetInsecure(insecure bool) {
+	c.Insecure = insecure
+	if c.conn != nil {
+		c.conn.insecure = c.Insecure
+	}
+}
+
 // Connect to an http stream
 // @url = http address
 // @params = http params to be added
 func (c *Client) Connect(url_ *url.URL, params map[string]string, done chan bool) (err error) {
 
 	var resp *http.Response
-	sc := NewStreamConn(c.MaxWait)
+	sc := NewStreamConn(c.MaxWait, c.Insecure)
 
 	sc.url = url_
 	// if http basic auth
@@ -312,7 +328,8 @@ func (c *Client) Connect(url_ *url.URL, params map[string]string, done chan bool
 		Log(ERROR, " error ", err)
 		goto Return
 	} else if resp == nil {
-		Log(ERROR, "No response on connection, invalid connect")
+		err = errors.New("No response on connection, invalid connect")
+		Log(ERROR, err.Error())
 		goto Return
 	}
 
