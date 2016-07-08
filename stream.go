@@ -171,6 +171,7 @@ func (conn *streamConn) readStream(resp *http.Response, handler func([]byte), un
 		if conn.isStale() {
 			conn.Close()
 			Debug("Connection closed, shutting down ")
+			done <- true
 			break
 		}
 
