@@ -1,43 +1,51 @@
-twitterstream is a client for the Twitter Streaming API. It also has partial support for the User Stream API and the Site streams API.
+httpstream was forked from https://github.com/hoisie/twitterstream
 
-For the regular streaming API, there's only three methods: `Follow`, `Track`, and `Sample`. 
+A Go http streaming client. http-streaming is most-associated with the twitter stream api.  This client works with twitter, but has also been tested against the data-sift stream as well as http://flowdock.com
 
-This is an example of using the `Sample` method:
+
+
+This is an example of using the `Twitter stream sample` :
 
     package main
-    import "twitterstream"
+
+    import "github.com/araddon/httpstream"
 
     func main() {
-        stream := make(chan *twitterstream.Tweet)
-        client := twitterstream.NewClient("username", "password")
-        err := client.Sample(stream)
-        if err != nil {
-            println(err.String())
-        }
-        for {
-            tw := <- stream
-            println(tw.User.Screen_name, ": ", tw.Text)
-        }
+        stream := make(chan []byte)
+        done := make(chan bool)
+        client := httpstream.NewBasicAuthClient("yourusername", "pwd", func(line []byte) {
+            stream <- line
+        })
+        go func() {
+            _ := client.Sample(done)
+            for line := range stream {
+                println(string(line))
+                // heavy lifting like json serialization, etc
+            }
+        }()
+        _ = <- done
     }
 
 
-This is an example of using the `Track` method:
+There are a few more samples in the Examples folder.
 
-  package main
+Use a channel instead of func :
 
-  import "twitterstream"
+        stream := make(chan []byte)
+        done := make(chan bool)
+        client := httpstream.NewChannelClient("yourusername", "pwd", stream)
+        go func() {
+            for line := range stream {
+                println(string(line))
+            }
+        }()
+        client.Sample(done)
+        _ = <- done
 
-    func main() {
-        stream := make(chan *twitterstream.Tweet)
-        client := twitterstream.NewClient("username", "password")
-        err := client.Track([]string{ "miley"}, stream)
-        if err != nil {
-            println(err.String())
-        }
-        for {
-            tw := <- stream
-            println(tw.User.Screen_name, ": ", tw.Text)
-        }
-    }
 
-For more information about this API, visit the [documentation page](http://apiwiki.twitter.com/Streaming-API-Documentation). 
+
+For more information about streaming apis
+
+- twitter stream api:  https://dev.twitter.com/docs/streaming-api/methods
+- flowdock: https://www.flowdock.com/api
+- datasift stream api:  http://dev.datasift.com/docs/streaming-api
