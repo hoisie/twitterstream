@@ -11,6 +11,7 @@ package httpstream
 import (
 	"bufio"
 	"bytes"
+	"crypto/tls"
 	"encoding/base64"
 	"errors"
 	"io"
@@ -22,7 +23,6 @@ import (
 	"sync"
 	"time"
 
-	"crypto/tls"
 	"github.com/mrjones/oauth"
 )
 
@@ -77,11 +77,13 @@ func basicauthConnect(conn *streamConn) (*http.Response, error) {
 	}
 
 	conn.client = &http.Client{}
+	httpTransport := &http.Transport{}
 	if conn.insecure {
-		conn.client.Transport = &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		}
+		httpTransport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	}
+	httpTransport.TLSHandshakeTimeout = 30 * time.Second
+	httpTransport.ResponseHeaderTimeout = 30 * time.Second
+	conn.client.Transport = httpTransport
 
 	var req http.Request
 	req.URL = conn.url
